@@ -1,0 +1,11 @@
+## What is BSAP?
+
+**Bedtime Science Audio Pipeline (BSAP)** is a local-first, fault-tolerant web application and automated media pipeline designed to produce long-form (1.5 to 4+ hours) soothing science audio documentaries in English for the "Sleepy Science" YouTube and podcast niche (channel: _Bedtime Science | Sleep & Relax_).
+
+Given a single topic, BSAP orchestrates the entire production lifecycle:
+
+1. Generates a structured, multi-chapter documentary outline and soothing narration scripts via LLMs.
+2. Sanitizes text, converts all numerical values into spoken English words, extracts pause tags, and splits chapters into short syntactic chunks.
+3. Synthesizes consistent, warm, elderly-narrator speech locally on a consumer GPU.
+4. Stitches audio chunks with natural pauses, mixes in a seamless ambient background bed, and runs an automated broadcast-grade studio mastering chain.
+5. Provides a React web interface to configure prompts/models, monitor real-time progress, preview or regenerate individual audio chunks, and download the final master audio alongside YouTube timestamps and video editor timeline markers.
