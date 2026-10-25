@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
-import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { createServer, type Server } from 'http';
+import type { AddressInfo } from 'net';
 import { PolzaLlmService } from '../polza-llm.service';
 import type { ReasoningEffort } from '../types/reasoning-effort.type';
 import { parseOutline } from '../utils/parse-outline.util';

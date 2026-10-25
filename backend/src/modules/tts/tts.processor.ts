@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { existsSync, promises as fs } from 'node:fs';
+import { existsSync, promises as fs } from 'fs';
 import { PIPELINE_JOBS } from '../queue/consts/pipeline-jobs.const';
 import { StateManagerService } from '../state/state-manager.service';
 import type { TtsJob } from '../text/types/tts-job.type';

@@ -1,11 +1,11 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { promises as fs } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { promises as fs } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { PIPELINE_JOBS } from '../../queue/consts/pipeline-jobs.const';
-import { profileSchema } from '../../state/schemas/profile.schema';
+import { profileSchema } from '../../state/schemas';
 import { StateManagerService } from '../../state/state-manager.service';
 import { ChunkerService } from '../chunker.service';
 import { TextNormalizerService } from '../text-normalizer.service';

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { promises as fs } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { promises as fs } from 'fs';
+import { basename, join, resolve } from 'path';
 import { PromptRole } from './types';
 
 @Injectable()

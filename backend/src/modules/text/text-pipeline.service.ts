@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { promises as fs } from 'node:fs';
+import { promises as fs } from 'fs';
 import { writeArtifact } from '../../utils/write-artifact.util';
 import { StateManagerService } from '../state/state-manager.service';
-import type { Chunk } from '../state/types/chunk.type';
+import { Chunk } from '../state/types';
 import { ChunkerService } from './chunker.service';
 import { TextNormalizerService } from './text-normalizer.service';
 import { TtsQueueService } from './tts-queue.service';

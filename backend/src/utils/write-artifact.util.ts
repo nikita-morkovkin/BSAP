@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
+import { randomUUID } from 'crypto';
+import { promises as fs } from 'fs';
 
 export async function writeArtifact(
   path: string,

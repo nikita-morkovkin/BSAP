@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { existsSync, promises as fs } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { existsSync, promises as fs } from 'fs';
+import { basename, join, resolve } from 'path';
 import { artifactPathSchema, profileSchema, stateSchema } from './schemas';
 import type { Chapter, Chunk, Profile, State } from './types';
 

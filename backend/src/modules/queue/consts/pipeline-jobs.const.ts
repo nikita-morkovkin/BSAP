@@ -8,4 +8,5 @@ export const PIPELINE_JOBS = {
   synthesizeChunk: 'synthesize-chunk',
   audioMasteringQueue: 'audio-mastering',
   assembleChapter: 'assemble-chapter',
+  masterProject: 'master-project',
 } as const;

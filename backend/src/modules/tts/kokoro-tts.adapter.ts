@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createWriteStream, promises as fs } from 'node:fs';
-import { dirname } from 'node:path';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { createWriteStream, promises as fs } from 'fs';
+import { dirname } from 'path';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 import type { Profile } from '../state/types/profile.type';
 import type { ITtsAdapter } from '../state/types/tts.type';
 

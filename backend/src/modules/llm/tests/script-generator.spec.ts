@@ -1,9 +1,9 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { promises as fs } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { promises as fs } from 'fs';
+import { tmpdir } from 'os';
+import { join, resolve } from 'path';
 import { PIPELINE_JOBS } from '../../queue/consts/pipeline-jobs.const';
 import { profileSchema } from '../../state/schemas/profile.schema';
 import { StateManagerService } from '../../state/state-manager.service';
@@ -12,7 +12,7 @@ import { PromptService } from '../prompt.service';
 import { ScriptGeneratorService } from '../script-generator.service';
 import { ScriptQueueService } from '../script-queue.service';
 import { ScriptProcessor } from '../script.processor';
-import type { LlmRequest } from '../types/llm-request.type';
+import { LlmRequest } from '../types';
 
 describe('Two-chapter script production and disk recovery', () => {
   let directory: string;

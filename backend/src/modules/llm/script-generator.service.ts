@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { existsSync, promises as fs } from 'node:fs';
+import { existsSync, promises as fs } from 'fs';
+import { writeArtifact } from '../../utils/write-artifact.util';
 import { StateManagerService } from '../state/state-manager.service';
-import type { Outline } from '../state/types/outline.type';
+import { Outline } from '../state/types';
 import { PolzaLlmService } from './polza-llm.service';
 import { PromptService } from './prompt.service';
 import { ScriptQueueService } from './script-queue.service';
 import { parseOutline } from './utils/parse-outline.util';
-import { writeArtifact } from '../../utils/write-artifact.util';
 
 @Injectable()
 export class ScriptGeneratorService {
