@@ -43,6 +43,11 @@ import { AssembleChapterJob } from '../types';
 
       server = createServer((request, response) => {
         (async () => {
+          if (request.url === '/v1/audio/voices') {
+            response.setHeader('Content-Type', 'application/json');
+            response.end(JSON.stringify({ voices: ['bm_george'] }));
+            return;
+          }
           const buffers: Buffer[] = [];
 
           for await (const part of request) {
@@ -120,6 +125,7 @@ import { AssembleChapterJob } from '../types';
               () => ({
                 PROJECTS_DIR: directory,
                 KOKORO_TTS_URL: `http://127.0.0.1:${address.port}`,
+                KOKORO_TIMEOUT_MS: 10000,
               }),
             ],
           }),

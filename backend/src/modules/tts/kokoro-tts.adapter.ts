@@ -4,6 +4,8 @@ import { createWriteStream, promises as fs } from 'fs';
 import { dirname } from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import { z } from 'zod';
+import { voiceIdSchema } from '../state/schemas/voice-id.schema';
 import type { Profile } from '../state/types/profile.type';
 import type { ITtsAdapter } from '../state/types/tts.type';
 
@@ -11,6 +13,7 @@ import type { ITtsAdapter } from '../state/types/tts.type';
 export class KokoroTtsAdapter implements ITtsAdapter {
   private readonly kokoroTtsUrl: string;
   private readonly kokoroTimeoutMs: number;
+  private voicesCache?: { ids: string[]; expires: number };
 
   constructor(private readonly configService: ConfigService) {
     this.kokoroTtsUrl = this.configService.getOrThrow<string>('KOKORO_TTS_URL');
@@ -28,6 +31,38 @@ export class KokoroTtsAdapter implements ITtsAdapter {
     const timeoutMs = this.kokoroTimeoutMs;
 
     const signal = AbortSignal.timeout(timeoutMs);
+    const voice = voiceIdSchema.parse(profile.ttsVoice);
+    if (!this.voicesCache || this.voicesCache.expires < Date.now()) {
+      const catalog = await fetch(
+        `${baseUrl.replace(/\/+$/, '')}/v1/audio/voices`,
+        { signal },
+      );
+
+      if (!catalog.ok) {
+        await catalog.body?.cancel();
+        throw new Error(`Kokoro voice catalog failed: HTTP ${catalog.status}`);
+      }
+
+      const payload = z
+        .object({
+          voices: z.array(z.union([z.string(), z.object({ id: z.string() })])),
+        })
+        .parse(await catalog.json());
+
+      this.voicesCache = {
+        ids: payload.voices.map((entry) =>
+          typeof entry === 'string' ? entry : entry.id,
+        ),
+        expires: Date.now() + 60000,
+      };
+    }
+
+    if (!this.voicesCache.ids.includes(voice)) {
+      throw new Error(
+        `Kokoro voice "${voice}" is unavailable. Select a voice from the available voices list.`,
+      );
+    }
+
     const response = await fetch(
       `${baseUrl.replace(/\/+$/, '')}/v1/audio/speech`,
       {
@@ -36,7 +71,7 @@ export class KokoroTtsAdapter implements ITtsAdapter {
         body: JSON.stringify({
           model: 'kokoro',
           input: text,
-          voice: profile.ttsVoice,
+          voice,
           speed: profile.ttsSpeed,
           response_format: 'wav',
         }),

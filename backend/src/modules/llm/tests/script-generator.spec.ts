@@ -23,12 +23,17 @@ describe('Two-chapter script production and disk recovery', () => {
   let prompts: PromptService;
   let queue: ScriptQueueService;
   let add: jest.Mock;
+  let scriptBullQueue: { add: jest.Mock; getJob: jest.Mock };
   let architect: jest.SpyInstance<Promise<string>, [LlmRequest]>;
   let writer: jest.SpyInstance<Promise<string>, [LlmRequest]>;
 
   beforeEach(async () => {
     directory = await fs.mkdtemp(join(tmpdir(), 'bsap-scripts-'));
     add = jest.fn().mockResolvedValue({});
+    scriptBullQueue = {
+      add: jest.fn(),
+      getJob: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -49,7 +54,7 @@ describe('Two-chapter script production and disk recovery', () => {
         },
         {
           provide: getQueueToken(PIPELINE_JOBS.scriptQueue),
-          useValue: { add: jest.fn(), getJob: jest.fn() },
+          useValue: scriptBullQueue,
         },
         {
           provide: getQueueToken(PIPELINE_JOBS.textQueue),
@@ -126,6 +131,7 @@ describe('Two-chapter script production and disk recovery', () => {
       llm,
       prompts,
       queue,
+      scriptBullQueue as never,
     );
 
     await restarted.generateProjectScripts(projectId);
@@ -214,6 +220,35 @@ describe('Two-chapter script production and disk recovery', () => {
       false,
     );
     expect(writer).not.toHaveBeenCalled();
+  });
+
+  it('aborts in-flight outline generation and preserves the cancelled state', async () => {
+    await stateManager.updateState(projectId, (current) => {
+      current.status = 'GENERATING_OUTLINE';
+    });
+    architect.mockImplementationOnce(
+      (request) =>
+        new Promise<string>((_resolve, reject) => {
+          request.abortSignal?.addEventListener('abort', () =>
+            reject(new Error('request aborted')),
+          );
+        }),
+    );
+
+    const generation = service.generateOutline(projectId);
+    await new Promise((resolve) => setImmediate(resolve));
+    await service.cancelOutline(projectId);
+
+    await expect(generation).rejects.toThrow(
+      'Outline generation was cancelled',
+    );
+    const state = await stateManager.getState(projectId);
+    expect(state.status).toBe('CANCELLED');
+    expect(state.outlineCompleted).toBe(false);
+    expect(state.error).toBe('Outline generation cancelled by user');
+    await expect(
+      fs.stat(join(directory, projectId, 'outline.json')),
+    ).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('rejects out-of-order chapters and preserves completed scripts if handoff fails', async () => {

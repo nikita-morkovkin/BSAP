@@ -6,4 +6,5 @@ export type LlmRequest = {
   prompt: string;
   reasoningEffort: ReasoningEffort;
   temperature: number;
+  abortSignal?: AbortSignal;
 };

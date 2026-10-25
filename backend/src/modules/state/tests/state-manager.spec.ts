@@ -306,7 +306,7 @@ describe('StateManagerService', () => {
 
   it('rejects invalid profile fields and inconsistent outlines', () => {
     expect(
-      profileSchema.safeParse({ ...profile, writerReasoningEffort: 'extreme' })
+      profileSchema.safeParse({ ...profile, writerReasoningEffort: '' })
         .success,
     ).toBe(false);
     expect(

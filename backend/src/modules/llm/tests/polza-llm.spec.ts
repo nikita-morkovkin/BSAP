@@ -132,7 +132,7 @@ describe('PolzaLlmService with the real AI SDK and a local HTTP gateway', () => 
     });
   });
 
-  it.each<ReasoningEffort>(['none', 'low', 'medium', 'high'])(
+  it.each<ReasoningEffort>(['none', 'low', 'medium', 'high', 'max'])(
     'serializes %s reasoning effort and validates the generated JSON outline',
     async (reasoningEffort) => {
       const text = await service.generateText({

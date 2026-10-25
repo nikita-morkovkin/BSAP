@@ -1,4 +1,12 @@
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../../pipes/zod-validation.pipe';
 import { stateSchema } from '../state/schemas';
@@ -40,6 +48,24 @@ export class ProjectsController {
     projectId: string,
   ) {
     return this.projectsService.resume(projectId);
+  }
+
+  @Post(':id/cancel-outline')
+  @HttpCode(202)
+  public async cancelOutline(
+    @Param('id', new ZodValidationPipe(stateSchema.shape.projectId))
+    projectId: string,
+  ) {
+    return this.projectsService.cancelOutline(projectId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  public async deleteProject(
+    @Param('id', new ZodValidationPipe(stateSchema.shape.projectId))
+    projectId: string,
+  ) {
+    await this.projectsService.deleteProject(projectId);
   }
 
   @Post(':id/chapters/:chapterNumber/chunks/:chunkId/regenerate')

@@ -16,6 +16,8 @@ import { ChapterAssemblyQueueService } from '../tts/chapter-assembly-queue.servi
 import { CreateProjectDto } from './dto/create-project.dto';
 import { RegenerateChunkDto } from './dto/regenerate-chunk.dto';
 import type { ProjectSummary } from './types/project-summary.type';
+import { ProjectDeletionService } from './project-deletion.service';
+import { ScriptGeneratorService } from '../llm/script-generator.service';
 
 @Injectable()
 export class ProjectsService {
@@ -27,6 +29,8 @@ export class ProjectsService {
     private readonly ttsQueueService: TtsQueueService,
     private readonly chapterAssemblyQueueService: ChapterAssemblyQueueService,
     private readonly masterProjectQueueService: MasterProjectQueueService,
+    private readonly projectDeletionService: ProjectDeletionService,
+    private readonly scriptGeneratorService: ScriptGeneratorService,
   ) {}
 
   public async listProjects(): Promise<ProjectSummary[]> {
@@ -62,7 +66,7 @@ export class ProjectsService {
       temperature: 0.7,
       architectSystemPrompt,
       writerSystemPrompt,
-      ttsVoice: 'bm_george*0.65+bm_lewis*0.35',
+      ttsVoice: 'bm_george',
       ttsSpeed: 0.85,
       masteringConfig: {},
     });
@@ -77,6 +81,17 @@ export class ProjectsService {
     await this.scriptQueueService.enqueueProject(state.projectId);
 
     return state;
+  }
+
+  public async deleteProject(projectId: string): Promise<void> {
+    await this.getState(projectId);
+    await this.projectDeletionService.deleteProject(projectId);
+  }
+
+  public async cancelOutline(projectId: string): Promise<State> {
+    await this.getState(projectId);
+    await this.scriptGeneratorService.cancelOutline(projectId);
+    return this.getState(projectId);
   }
 
   public async getState(projectId: string): Promise<State> {
@@ -135,6 +150,12 @@ export class ProjectsService {
       pendingChapters.length > 0 ||
       chapters.length === 0
     ) {
+      if (state.status === 'CANCELLED') {
+        await this.stateManagerService.updateState(projectId, (current) => {
+          current.status = 'IDLE';
+          delete current.error;
+        });
+      }
       await this.scriptQueueService.enqueueProject(projectId);
 
       return this.getState(projectId);

@@ -65,6 +65,7 @@ export class PolzaLlmService {
       system: request.system,
       prompt: request.prompt,
       temperature: request.temperature,
+      abortSignal: request.abortSignal,
       maxRetries: 5,
       providerOptions: {
         openai: { reasoningEffort: request.reasoningEffort },

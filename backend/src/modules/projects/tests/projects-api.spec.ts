@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { promises as fs } from 'fs';
@@ -19,6 +20,8 @@ import { MediaController } from '../media.controller';
 import { MediaService } from '../media.service';
 import { ProjectsController } from '../projects.controller';
 import { ProjectsService } from '../projects.service';
+import { ProjectDeletionService } from '../project-deletion.service';
+import { ScriptGeneratorService } from '../../llm/script-generator.service';
 
 describe('Projects REST API', () => {
   let app: INestApplication<Server>;
@@ -46,6 +49,32 @@ describe('Projects REST API', () => {
         MediaService,
         StateManagerService,
         PromptService,
+        {
+          provide: ProjectDeletionService,
+          useValue: {
+            deleteProject: (id: string) => manager.deleteProject(id),
+          },
+        },
+        {
+          provide: ScriptGeneratorService,
+          useValue: {
+            cancelOutline: jest.fn(async (id: string) => {
+              const current = await manager.getState(id);
+              if (
+                current.status !== 'GENERATING_OUTLINE' ||
+                current.outlineCompleted
+              ) {
+                throw new ConflictException(
+                  'Outline generation is no longer active',
+                );
+              }
+              await manager.updateState(id, (current) => {
+                current.status = 'CANCELLED';
+                current.error = 'Outline generation cancelled by user';
+              });
+            }),
+          },
+        },
         {
           provide: ConfigService,
           useValue: new ConfigService({
@@ -86,6 +115,7 @@ describe('Projects REST API', () => {
     const defaults = profileSchema.parse(response.body);
 
     expect(defaults.maxChunkChars).toBe(200);
+    expect(defaults.ttsVoice).toBe('bm_george');
     expect(defaults.architectSystemPrompt).toBe(
       (
         await fs.readFile(
@@ -102,6 +132,45 @@ describe('Projects REST API', () => {
         )
       ).trim(),
     );
+  });
+
+  it('deletes project files and returns 404 for subsequent requests', async () => {
+    await request(app.getHttpServer())
+      .delete(`/api/projects/${state.projectId}`)
+      .expect(204);
+    await expect(
+      fs.stat(manager.getProjectDirectory(state.projectId)),
+    ).rejects.toMatchObject({ code: 'ENOENT' });
+    await request(app.getHttpServer())
+      .get(`/api/projects/${state.projectId}`)
+      .expect(404);
+    await request(app.getHttpServer())
+      .delete(`/api/projects/${state.projectId}`)
+      .expect(404);
+    await request(app.getHttpServer())
+      .delete('/api/projects/invalid')
+      .expect(400);
+    expect(await manager.listProjects()).toEqual([]);
+  });
+
+  it('cancels active outline generation and rejects cancellation outside that stage', async () => {
+    await request(app.getHttpServer())
+      .post(`/api/projects/${state.projectId}/cancel-outline`)
+      .expect(409);
+
+    await manager.updateState(state.projectId, (current) => {
+      current.status = 'GENERATING_OUTLINE';
+    });
+    await request(app.getHttpServer())
+      .post(`/api/projects/${state.projectId}/cancel-outline`)
+      .expect(202)
+      .expect((response) => {
+        const body: unknown = response.body;
+        expect(body).toMatchObject({
+          status: 'CANCELLED',
+          error: 'Outline generation cancelled by user',
+        });
+      });
   });
 
   it('validates creation payloads and enqueues the outline pipeline', async () => {

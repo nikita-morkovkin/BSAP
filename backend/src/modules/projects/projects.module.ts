@@ -1,4 +1,9 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { PIPELINE_JOBS } from '../queue/consts';
+import { CatalogService } from './catalog.service';
+import { SettingsController } from './settings.controller';
+import { ProjectDeletionService } from './project-deletion.service';
 import { ConfigModule } from '@nestjs/config';
 import { AudioModule } from '../audio/audio.module';
 import { LlmModule } from '../llm/llm.module';
@@ -12,6 +17,14 @@ import { ProjectsService } from './projects.service';
 
 @Module({
   imports: [
+    BullModule.registerQueue(
+      ...[
+        PIPELINE_JOBS.scriptQueue,
+        PIPELINE_JOBS.textQueue,
+        PIPELINE_JOBS.ttsQueue,
+        PIPELINE_JOBS.audioMasteringQueue,
+      ].map((name) => ({ name })),
+    ),
     ConfigModule,
     StateModule,
     LlmModule,
@@ -19,7 +32,12 @@ import { ProjectsService } from './projects.service';
     TtsModule,
     AudioModule,
   ],
-  controllers: [ProjectsController, MediaController],
-  providers: [ProjectsService, MediaService],
+  controllers: [ProjectsController, MediaController, SettingsController],
+  providers: [
+    ProjectsService,
+    MediaService,
+    CatalogService,
+    ProjectDeletionService,
+  ],
 })
 export class ProjectsModule {}

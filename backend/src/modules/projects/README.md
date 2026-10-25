@@ -11,6 +11,10 @@ All routes use `/api/projects`. CORS is enabled and exposes media response heade
   generation. Returns the initial state with HTTP 201.
 - `GET /:id` returns `{ "state": ..., "outline": ... }`. The outline is `null`
   until its file exists.
+- `DELETE /:id` removes the project directory and its queued/completed/failed
+  pipeline jobs, returning HTTP 204. Active work returns HTTP 409 without deleting
+  files. Queue dispatch is briefly paused during deletion and restored afterward.
+  Unknown projects return HTTP 404; malformed IDs return HTTP 400.
 - `POST /:id/resume` returns HTTP 202 and the current state. It recovers the
   earliest incomplete stage, including completed artifacts that were deleted.
   Existing queued/active jobs are not duplicated; failed jobs are retried.
@@ -21,6 +25,20 @@ All routes use `/api/projects`. CORS is enabled and exposes media response heade
   not the project profile. That chunk is synthesized, then its chapter is
   assembled and the project is mastered by the existing worker handoffs. If a
   queue handoff fails, use resume; persisted overrides survive retries/restarts.
+
+## Provider settings
+
+- `GET /api/settings/models` fetches the Polza catalog through `POLZA_API_URL`,
+  with server-side authorization. Only chat models are returned, including their
+  supported parameters and reasoning efforts/defaults/mandatory flag.
+- `GET /api/settings/voices` fetches `/v1/audio/voices` from `KOKORO_TTS_URL`.
+  Both legacy string lists and current `{ id, name }` entries are supported.
+- The UI searches model names and IDs by keyword and limits effort selection to
+  each model's catalog values. Catalog failures display retry controls.
+- Voice selection uses one catalog ID, with narration speed stored separately as
+  `ttsSpeed`. Legacy weighted formulas load as their first voice (for example,
+  `bm_george*0.65+bm_lewis*0.35` becomes `bm_george`); blending is not preserved.
+  The TTS adapter verifies IDs against the live voice catalog before synthesis.
 
 ## Disk-backed media
 

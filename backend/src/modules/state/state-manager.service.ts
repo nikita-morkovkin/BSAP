@@ -145,6 +145,14 @@ export class StateManagerService {
     });
   }
 
+  public async deleteProject(projectId: string): Promise<void> {
+    const directory = this.getProjectDirectory(projectId);
+    await this.withLock(directory, async () => {
+      await this.getState(projectId);
+      await fs.rm(directory, { recursive: true });
+    });
+  }
+
   public async getPendingChapters(projectId: string): Promise<Chapter[]> {
     const state = await this.getState(projectId);
 

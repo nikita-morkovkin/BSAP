@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { ConflictException } from '@nestjs/common';
+import { Queue } from 'bullmq';
 import { existsSync, promises as fs } from 'fs';
 import { writeArtifact } from '../../utils/write-artifact.util';
 import { StateManagerService } from '../state/state-manager.service';
@@ -7,39 +10,55 @@ import { PolzaLlmService } from './polza-llm.service';
 import { PromptService } from './prompt.service';
 import { ScriptQueueService } from './script-queue.service';
 import { parseOutline } from './utils/parse-outline.util';
+import { PIPELINE_JOBS } from '../queue/consts/pipeline-jobs.const';
+import type { ScriptJob } from './types/script-job.type';
 
 @Injectable()
 export class ScriptGeneratorService {
+  private readonly activeOutlines = new Map<string, AbortController>();
+
   constructor(
     private readonly stateManagerService: StateManagerService,
     private readonly polzaLlmService: PolzaLlmService,
     private readonly promptService: PromptService,
     private readonly scriptQueueService: ScriptQueueService,
+    @InjectQueue(PIPELINE_JOBS.scriptQueue)
+    private readonly scriptQueue: Queue<ScriptJob>,
   ) {}
 
   public async generateOutline(projectId: string): Promise<Outline> {
-    const state = await this.stateManagerService.getState(projectId);
-    const path = this.stateManagerService.getArtifactPath(
-      projectId,
-      'outline.json',
-    );
-
-    if (state.outlineCompleted && existsSync(path)) {
-      return this.readOutline(projectId);
-    }
-
-    if (Object.keys(state.chapters).length > 0) {
-      throw new Error(
-        'Cannot replace a missing or incomplete outline with existing chapters',
-      );
-    }
-
-    await this.stateManagerService.updateState(projectId, (current) => {
-      current.status = 'GENERATING_OUTLINE';
-      delete current.error;
-    });
+    const controller = new AbortController();
+    this.activeOutlines.set(projectId, controller);
 
     try {
+      const state = await this.stateManagerService.getState(projectId);
+      const path = this.stateManagerService.getArtifactPath(
+        projectId,
+        'outline.json',
+      );
+
+      if (state.status === 'CANCELLED') {
+        throw new Error('Outline generation was cancelled');
+      }
+
+      if (state.outlineCompleted && existsSync(path)) {
+        return this.readOutline(projectId);
+      }
+
+      if (Object.keys(state.chapters).length > 0) {
+        throw new Error(
+          'Cannot replace a missing or incomplete outline with existing chapters',
+        );
+      }
+
+      await this.stateManagerService.updateState(projectId, (current) => {
+        if (current.status === 'CANCELLED' || controller.signal.aborted) {
+          throw new Error('Outline generation was cancelled');
+        }
+        current.status = 'GENERATING_OUTLINE';
+        delete current.error;
+      });
+
       const system = await this.promptService.getSystemPrompt(
         'architect',
         state.profile.architectSystemPrompt,
@@ -50,11 +69,21 @@ export class ScriptGeneratorService {
         prompt: `Design the documentary outline for this topic:\n${state.topic}`,
         reasoningEffort: state.profile.architectReasoningEffort,
         temperature: state.profile.temperature,
+        abortSignal: controller.signal,
       });
+      if (controller.signal.aborted) {
+        throw new Error('Outline generation was cancelled');
+      }
       const outline = parseOutline(text);
 
       await writeArtifact(path, `${JSON.stringify(outline, null, 2)}\n`);
+      if (controller.signal.aborted) {
+        throw new Error('Outline generation was cancelled');
+      }
       await this.stateManagerService.updateState(projectId, (current) => {
+        if (current.status === 'CANCELLED' || controller.signal.aborted) {
+          throw new Error('Outline generation was cancelled');
+        }
         current.outlineCompleted = true;
         current.status = 'GENERATING_SCRIPTS';
         delete current.error;
@@ -77,9 +106,49 @@ export class ScriptGeneratorService {
 
       return outline;
     } catch (error) {
+      const current = await this.stateManagerService
+        .getState(projectId)
+        .catch(() => undefined);
+      if (controller.signal.aborted || current?.status === 'CANCELLED') {
+        throw new Error('Outline generation was cancelled');
+      }
       await this.markFailed(projectId, error);
 
       throw error;
+    } finally {
+      if (this.activeOutlines.get(projectId) === controller) {
+        this.activeOutlines.delete(projectId);
+      }
+    }
+  }
+
+  public async cancelOutline(projectId: string): Promise<void> {
+    const job = await this.scriptQueue.getJob(`scripts-${projectId}`);
+    await this.stateManagerService.updateState(projectId, (current) => {
+      if (current.status !== 'GENERATING_OUTLINE' || current.outlineCompleted) {
+        throw new ConflictException('Outline generation is no longer active');
+      }
+      current.status = 'CANCELLED';
+      current.error = 'Outline generation cancelled by user';
+    });
+
+    this.activeOutlines.get(projectId)?.abort();
+    if (job) {
+      const jobState = await job.getState();
+      if (jobState !== 'active') {
+        try {
+          await job.remove();
+        } catch {
+          // It may have become active after getState; its abort signal is handled above.
+        }
+      } else {
+        // The active processor exits on the abort signal; wait briefly so an immediate
+        // resume cannot mistake the cancelling job for work that is still running.
+        const deadline = Date.now() + 10_000;
+        while (Date.now() < deadline && (await job.getState()) === 'active') {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
     }
   }
 

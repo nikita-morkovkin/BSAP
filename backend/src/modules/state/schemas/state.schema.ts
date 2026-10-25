@@ -17,6 +17,7 @@ export const stateSchema = z
       'MASTERING',
       'COMPLETED',
       'FAILED',
+      'CANCELLED',
     ]),
     error: z.string().optional(),
     profile: profileSchema,
