@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LlmModule } from '../../modules/llm/llm.module';
 import { QueueModule } from '../../modules/queue/queue.module';
 import { StateModule } from '../../modules/state/state.module';
+import { TextModule } from '../../modules/text/text.module';
 import { HealthController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -23,6 +24,7 @@ import { AppService } from './app.service';
     QueueModule,
     StateModule,
     LlmModule,
+    TextModule,
   ],
   controllers: [HealthController],
   providers: [AppService],

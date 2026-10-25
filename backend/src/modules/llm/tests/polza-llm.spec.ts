@@ -1,9 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { PolzaLlmService } from './polza-llm.service';
-import type { ReasoningEffort } from './types/reasoning-effort.type';
-import { parseOutline } from './utils/parse-outline.util';
+import { PolzaLlmService } from '../polza-llm.service';
+import type { ReasoningEffort } from '../types/reasoning-effort.type';
+import { parseOutline } from '../utils/parse-outline.util';
 
 describe('PolzaLlmService with the real AI SDK and a local HTTP gateway', () => {
   let server: Server;

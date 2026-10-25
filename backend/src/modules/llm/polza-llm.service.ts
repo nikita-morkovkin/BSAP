@@ -11,6 +11,11 @@ export class PolzaLlmService {
 
   constructor(private readonly configService: ConfigService) {
     this.apiKey = this.configService.getOrThrow<string>('POLZA_API_KEY');
+
+    if (!this.apiKey.trim()) {
+      throw new Error('POLZA_API_KEY must not be empty');
+    }
+
     this.llmBaseUrl = this.configService.getOrThrow<string>('POLZA_API_URL');
   }
 

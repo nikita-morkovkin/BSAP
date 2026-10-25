@@ -42,7 +42,7 @@ describe('Two-chapter script production and disk recovery', () => {
           provide: ConfigService,
           useValue: new ConfigService({
             PROJECTS_DIR: directory,
-            PROMPTS_DIR: resolve(__dirname, '../../../../prompts'),
+            PROMPTS_DIR: resolve(__dirname, '../../../../../prompts'),
             POLZA_API_URL: 'http://127.0.0.1/v1',
             POLZA_API_KEY: 'test-key',
           }),

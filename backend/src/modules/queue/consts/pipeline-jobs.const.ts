@@ -4,4 +4,6 @@ export const PIPELINE_JOBS = {
   generateChapter: 'generate-chapter-script',
   textQueue: 'text',
   normalizeProject: 'normalize-and-chunk-project',
+  ttsQueue: 'tts-queue',
+  synthesizeChunk: 'synthesize-chunk',
 } as const;
