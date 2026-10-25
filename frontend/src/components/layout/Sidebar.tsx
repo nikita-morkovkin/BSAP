@@ -14,12 +14,6 @@ const Sidebar = () => {
 
   return (
     <aside className="border-b bg-card p-5 lg:sticky lg:top-0 lg:h-dvh lg:w-72 lg:shrink-0 lg:overflow-auto lg:border-r lg:border-b-0">
-      <div className="mb-6 flex items-center gap-3">
-        <div>
-          <p className="font-semibold tracking-tight">Bedtime Science</p>
-          <p className="text-xs text-muted-foreground">Audio Pipeline</p>
-        </div>
-      </div>
       <Button onClick={handleCreate} className="w-full">
         <Plus />
         New episode
@@ -42,15 +36,11 @@ const Sidebar = () => {
           Your studio is quiet. Create your first episode to begin.
         </p>
       )}
-      <ul className="max-h-72 space-y-1 overflow-auto lg:max-h-none">
+      <ul className="max-h-72 space-y-1 mt-4 overflow-auto lg:max-h-none">
         {projects.map((project) => (
           <ProjectListItem key={project.projectId} project={project} />
         ))}
       </ul>
-      <p className="mt-8 text-xs leading-5 text-muted-foreground">
-        Local-first production. Your scripts, voices, and masters stay on your
-        machine.
-      </p>
     </aside>
   );
 };

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/Badge";
+import Badge from "@/components/ui/Badge";
 import type { Chunk, Profile } from "@/types/project.types";
 import ChunkPlaybackButton from "./ChunkPlaybackButton";
 import RegenerateChunkDialog from "./RegenerateChunkDialog";

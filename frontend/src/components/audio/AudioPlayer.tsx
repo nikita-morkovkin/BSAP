@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/Button";
 import { useAudioPlayerStore } from "@/store/audioPlayer.store";
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import Slider from "../ui/Slider";
 
 const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -20,8 +21,12 @@ const AudioPlayer = () => {
     toast.error("Audio preview unavailable. Try playing the chunk again.");
   };
 
-  const handleVolume = (event: ChangeEvent<HTMLInputElement>) => {
-    setVolume(Number(event.target.value));
+  const handleVolume = (value: number | readonly number[]) => {
+    const nextVolume = typeof value === "number" ? value : value[0];
+
+    if (nextVolume !== undefined) {
+      setVolume(nextVolume);
+    }
   };
 
   useEffect(() => {
@@ -76,14 +81,14 @@ const AudioPlayer = () => {
           </span>
           <label className="flex items-center gap-2">
             Volume
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
+            <Slider
+              aria-label="Volume"
+              min={0}
+              max={1}
+              step={0.05}
               value={volume}
-              onChange={handleVolume}
-              className="w-24"
+              onValueChange={handleVolume}
+              className="w-40"
             />
           </label>
           <Button variant="outline" onClick={pause} disabled={pauseDisabled}>
