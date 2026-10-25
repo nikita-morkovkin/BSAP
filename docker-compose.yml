@@ -3,7 +3,7 @@ services:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "${REDIS_HOST_PORT}:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -61,6 +61,8 @@ services:
       PORT: "${BACKEND_PORT}"
       REDIS_HOST: "${REDIS_HOST}"
       REDIS_PORT: "${REDIS_PORT}"
+      POLZA_API_URL: "${POLZA_API_URL}"
+      POLZA_API_KEY: "${POLZA_API_KEY}"
     volumes:
       - ./projects:/app/projects
       - ./assets:/app/assets

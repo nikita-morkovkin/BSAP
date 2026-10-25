@@ -1,13 +1,12 @@
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { existsSync, promises as fs } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { outlineSchema, profileSchema, stateSchema } from './schemas';
-import { StateManagerService } from './state-manager.service';
-import { StateModule } from './state.module';
-import type { Profile } from './types/profile.type';
-import type { State } from './types/state.type';
+import { existsSync, promises as fs } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { outlineSchema, profileSchema, stateSchema } from '../schemas';
+import { StateManagerService } from '../state-manager.service';
+import { StateModule } from '../state.module';
+import { Profile, State } from '../types';
 
 describe('StateManagerService', () => {
   let directory: string;

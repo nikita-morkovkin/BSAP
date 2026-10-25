@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { LlmModule } from '../../modules/llm/llm.module';
 import { QueueModule } from '../../modules/queue/queue.module';
 import { StateModule } from '../../modules/state/state.module';
 import { HealthController } from './app.controller';
@@ -21,6 +22,7 @@ import { AppService } from './app.service';
     }),
     QueueModule,
     StateModule,
+    LlmModule,
   ],
   controllers: [HealthController],
   providers: [AppService],

@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import { HEALTH_CHECK_JOB, HEALTH_CHECK_QUEUE } from './consts/queue.consts';
+import { HEALTH_CHECK_JOB, HEALTH_CHECK_QUEUE } from './consts';
 
 @Injectable()
 export class QueueService implements OnApplicationBootstrap {
