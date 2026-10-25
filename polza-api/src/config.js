@@ -32,8 +32,8 @@ export async function loadConfig() {
   const fileKey = typeof raw.polzaApiKey === 'string' ? raw.polzaApiKey.trim() : '';
 
   const cfg = {
-    port: raw.port ?? 8787,
-    host: raw.host ?? '127.0.0.1',
+    port: Number(process.env.PORT ?? raw.port ?? 8787),
+    host: process.env.HOST ?? raw.host ?? '127.0.0.1',
     upstreamBaseUrl: UPSTREAM_BASE_URL,
     polzaApiKey: fileKey || envKey || '',
     inject: raw.inject ?? {},

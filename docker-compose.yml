@@ -1,0 +1,86 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_HOST_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - bsap-network
+
+  kokoro-tts:
+    image: ghcr.io/remsky/kokoro-fastapi-gpu:latest
+    ports:
+      - "${KOKORO_TTS_PORT}:8880"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - bsap-network
+
+  polza-api:
+    build:
+      context: ./polza-api
+    ports:
+      - "${POLZA_API_PORT}:4000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4000
+    volumes:
+      - ./polza-api/config.json:/app/config.json:ro
+    networks:
+      - bsap-network
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "${BACKEND_PORT}:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kokoro-tts:
+        condition: service_started
+      polza-api:
+        condition: service_started
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      NODE_ENV: "${NODE_ENV}"
+      PORT: "${BACKEND_PORT}"
+      REDIS_HOST: "${REDIS_HOST}"
+      REDIS_PORT: "${REDIS_PORT}"
+    volumes:
+      - ./projects:/app/projects
+      - ./assets:/app/assets
+      - ./prompts:/app/prompts
+    networks:
+      - bsap-network
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT}:8080"
+    depends_on:
+      - backend
+    networks:
+      - bsap-network
+
+volumes:
+  redis-data:
+
+networks:
+  bsap-network:
+    driver: bridge

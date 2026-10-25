@@ -1,0 +1,29 @@
+# Dependencies and build outputs
+node_modules/
+**/node_modules/
+backend/dist/
+frontend/dist/
+backend/coverage/
+
+# Local environment and service secrets
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+polza-api/config.json
+api-proxy/config.json
+
+# Local project output and media assets
+projects/*
+!projects/.gitkeep
+assets/voices/*
+!assets/voices/.gitkeep
+assets/ambient/*
+!assets/ambient/.gitkeep
+
+# Tooling / OS
+.DS_Store
+Thumbs.db
+*.log
