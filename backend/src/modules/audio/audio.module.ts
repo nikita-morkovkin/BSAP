@@ -20,6 +20,6 @@ import { MetadataExporterService } from './metadata-exporter.service';
     MasterProjectQueueService,
     AudioProcessor,
   ],
-  exports: [FfmpegService, MetadataExporterService],
+  exports: [FfmpegService, MetadataExporterService, MasterProjectQueueService],
 })
 export class AudioModule {}

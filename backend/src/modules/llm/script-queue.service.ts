@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import { enqueueRecoverableJob } from '../../utils/enqueue-recoverable-job.util';
 import { PIPELINE_JOBS } from '../queue/consts';
 import { ScriptJob } from './types';
 
@@ -14,28 +15,20 @@ export class ScriptQueueService {
   ) {}
 
   public async enqueueProject(projectId: string): Promise<void> {
-    await this.scriptQueue.add(
+    await enqueueRecoverableJob(
+      this.scriptQueue,
       PIPELINE_JOBS.generateProject,
       { projectId },
-      {
-        jobId: `scripts-${projectId}`,
-        attempts: 6,
-        backoff: { type: 'exponential', delay: 2000 },
-      },
+      `scripts-${projectId}`,
     );
   }
 
   public async enqueueNormalization(projectId: string): Promise<void> {
-    await this.textQueue.add(
+    await enqueueRecoverableJob(
+      this.textQueue,
       PIPELINE_JOBS.normalizeProject,
       { projectId },
-      {
-        jobId: `normalize-${projectId}`,
-        attempts: 6,
-        backoff: { type: 'exponential', delay: 2000 },
-        removeOnComplete: false,
-        removeOnFail: false,
-      },
+      `normalize-${projectId}`,
     );
   }
 }

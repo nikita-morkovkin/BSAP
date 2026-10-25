@@ -12,6 +12,16 @@ export class PromptService {
     role: PromptRole,
     instructions: string,
   ): Promise<string> {
+    const prompt = await this.getDefaultSystemPrompt(role);
+
+    if (instructions.trim() === prompt.trim()) {
+      return prompt.trim();
+    }
+
+    return `${prompt.trim()}\n\nAdditional project instructions:\n${instructions}`;
+  }
+
+  public async getDefaultSystemPrompt(role: PromptRole): Promise<string> {
     const workingDirectory = process.cwd();
 
     const defaultDirectory =
@@ -27,6 +37,6 @@ export class PromptService {
       'utf8',
     );
 
-    return `${prompt.trim()}\n\nAdditional project instructions:\n${instructions}`;
+    return prompt;
   }
 }

@@ -65,11 +65,11 @@ export class TtsProcessor extends WorkerHost {
         });
 
         try {
-          await this.kokoroTtsAdapter.synthesize(
-            chunk.text,
-            outputPath,
-            state.profile,
-          );
+          await this.kokoroTtsAdapter.synthesize(chunk.text, outputPath, {
+            ...state.profile,
+            ttsVoice: chunk.ttsVoice ?? state.profile.ttsVoice,
+            ttsSpeed: chunk.ttsSpeed ?? state.profile.ttsSpeed,
+          });
 
           durationMs = await this.audioProbeService.getDurationMs(outputPath);
         } catch (error) {

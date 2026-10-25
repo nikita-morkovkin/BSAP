@@ -23,6 +23,6 @@ import { TtsProcessor } from './tts.processor';
     ChapterAssemblyQueueService,
     TtsProcessor,
   ],
-  exports: [KokoroTtsAdapter, AudioProbeService],
+  exports: [KokoroTtsAdapter, AudioProbeService, ChapterAssemblyQueueService],
 })
 export class TtsModule {}

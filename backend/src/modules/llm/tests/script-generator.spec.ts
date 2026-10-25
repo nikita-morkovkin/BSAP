@@ -49,9 +49,12 @@ describe('Two-chapter script production and disk recovery', () => {
         },
         {
           provide: getQueueToken(PIPELINE_JOBS.scriptQueue),
-          useValue: { add: jest.fn() },
+          useValue: { add: jest.fn(), getJob: jest.fn() },
         },
-        { provide: getQueueToken(PIPELINE_JOBS.textQueue), useValue: { add } },
+        {
+          provide: getQueueToken(PIPELINE_JOBS.textQueue),
+          useValue: { add, getJob: jest.fn() },
+        },
       ],
     }).compile();
 

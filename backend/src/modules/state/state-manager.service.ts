@@ -99,6 +99,27 @@ export class StateManagerService {
     return state;
   }
 
+  public async listProjects(): Promise<State[]> {
+    const root = this.getProjectsDirectory();
+
+    await fs.mkdir(root, { recursive: true });
+
+    const entries = await fs.readdir(root, { withFileTypes: true });
+    const projects = await Promise.all(
+      entries
+        .filter(
+          (entry) =>
+            entry.isDirectory() &&
+            stateSchema.shape.projectId.safeParse(entry.name).success,
+        )
+        .map((entry) => this.getState(entry.name)),
+    );
+
+    return projects.sort((left, right) =>
+      right.createdAt.localeCompare(left.createdAt),
+    );
+  }
+
   public async updateState(
     projectId: string,
     update: (state: State) => void,

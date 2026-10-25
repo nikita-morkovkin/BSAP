@@ -23,6 +23,11 @@ import { TtsQueueService } from './tts-queue.service';
     TextProcessor,
     TtsQueueService,
   ],
-  exports: [TextNormalizerService, ChunkerService, TextPipelineService],
+  exports: [
+    TextNormalizerService,
+    ChunkerService,
+    TextPipelineService,
+    TtsQueueService,
+  ],
 })
 export class TextModule {}
