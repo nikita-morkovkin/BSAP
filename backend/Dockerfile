@@ -12,6 +12,17 @@ COPY nest-cli.json tsconfig*.json ./
 COPY src ./src
 RUN npm run build
 
+FROM node:24.16.0-alpine3.22 AS tts-test
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+RUN apk add --no-cache ffmpeg
+COPY nest-cli.json tsconfig*.json ./
+COPY src ./src
+ENV BSAP_TTS_INTEGRATION=1 \
+    TEST_REDIS_HOST=redis
+CMD ["npm", "test", "--", "--runInBand", "tts.integration.spec.ts"]
+
 FROM base AS production-deps
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./

@@ -63,6 +63,9 @@ services:
       REDIS_PORT: "${REDIS_PORT}"
       POLZA_API_URL: "${POLZA_API_URL}"
       POLZA_API_KEY: "${POLZA_API_KEY}"
+      KOKORO_TTS_URL: "${KOKORO_TTS_URL}"
+      KOKORO_TIMEOUT_MS: "${KOKORO_TIMEOUT_MS}"
+      FFPROBE_PATH: "${FFPROBE_PATH}"
     volumes:
       - ./projects:/app/projects
       - ./assets:/app/assets

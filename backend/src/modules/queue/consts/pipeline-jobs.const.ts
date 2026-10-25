@@ -6,4 +6,6 @@ export const PIPELINE_JOBS = {
   normalizeProject: 'normalize-and-chunk-project',
   ttsQueue: 'tts-queue',
   synthesizeChunk: 'synthesize-chunk',
+  audioMasteringQueue: 'audio-mastering',
+  assembleChapter: 'assemble-chapter',
 } as const;

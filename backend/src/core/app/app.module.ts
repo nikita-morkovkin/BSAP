@@ -5,6 +5,7 @@ import { LlmModule } from '../../modules/llm/llm.module';
 import { QueueModule } from '../../modules/queue/queue.module';
 import { StateModule } from '../../modules/state/state.module';
 import { TextModule } from '../../modules/text/text.module';
+import { TtsModule } from '../../modules/tts/tts.module';
 import { HealthController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -25,6 +26,7 @@ import { AppService } from './app.service';
     StateModule,
     LlmModule,
     TextModule,
+    TtsModule,
   ],
   controllers: [HealthController],
   providers: [AppService],

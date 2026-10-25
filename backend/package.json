@@ -92,7 +92,7 @@
       ]
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!@nestjs/(?:config|bullmq)/)"
+      "node_modules/(?!@nestjs/(?:config|bullmq|bull-shared)/)"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
