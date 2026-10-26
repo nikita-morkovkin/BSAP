@@ -66,6 +66,8 @@ services:
       KOKORO_TTS_URL: "${KOKORO_TTS_URL}"
       KOKORO_TIMEOUT_MS: "${KOKORO_TIMEOUT_MS}"
       FFPROBE_PATH: "${FFPROBE_PATH}"
+      DEFAULT_ARCHITECT_MODEL: "${DEFAULT_ARCHITECT_MODEL}"
+      DEFAULT_WRITER_MODEL: "${DEFAULT_WRITER_MODEL}"
     volumes:
       - ./projects:/app/projects
       - ./assets:/app/assets

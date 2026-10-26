@@ -79,7 +79,7 @@ const AudioPlayer = () => {
           <span className="min-w-0 flex-1 truncate">
             Preview · {activeChunkId}
           </span>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-4">
             Volume
             <Slider
               aria-label="Volume"

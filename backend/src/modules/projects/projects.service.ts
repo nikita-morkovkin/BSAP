@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { existsSync, promises as fs } from 'fs';
 import { MasterProjectQueueService } from '../audio/master-project-queue.service';
 import { PromptService } from '../llm/prompt.service';
+import { ScriptGeneratorService } from '../llm/script-generator.service';
 import { ScriptQueueService } from '../llm/script-queue.service';
 import { outlineSchema, profileSchema } from '../state/schemas';
 import { StateManagerService } from '../state/state-manager.service';
@@ -15,12 +16,14 @@ import { TtsQueueService } from '../text/tts-queue.service';
 import { ChapterAssemblyQueueService } from '../tts/chapter-assembly-queue.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { RegenerateChunkDto } from './dto/regenerate-chunk.dto';
-import type { ProjectSummary } from './types/project-summary.type';
 import { ProjectDeletionService } from './project-deletion.service';
-import { ScriptGeneratorService } from '../llm/script-generator.service';
+import type { ProjectSummary } from './types/project-summary.type';
 
 @Injectable()
 export class ProjectsService {
+  private readonly architectModel: string;
+  private readonly writerModel: string;
+
   constructor(
     private readonly stateManagerService: StateManagerService,
     private readonly promptService: PromptService,
@@ -31,7 +34,14 @@ export class ProjectsService {
     private readonly masterProjectQueueService: MasterProjectQueueService,
     private readonly projectDeletionService: ProjectDeletionService,
     private readonly scriptGeneratorService: ScriptGeneratorService,
-  ) {}
+  ) {
+    this.architectModel = this.configService.getOrThrow<string>(
+      'DEFAULT_ARCHITECT_MODEL',
+    );
+    this.writerModel = this.configService.getOrThrow<string>(
+      'DEFAULT_WRITER_MODEL',
+    );
+  }
 
   public async listProjects(): Promise<ProjectSummary[]> {
     const projects = await this.stateManagerService.listProjects();
@@ -55,12 +65,8 @@ export class ProjectsService {
     ]);
 
     return profileSchema.parse({
-      architectModel:
-        this.configService.get<string>('DEFAULT_ARCHITECT_MODEL') ??
-        'anthropic/claude-sonnet-4',
-      writerModel:
-        this.configService.get<string>('DEFAULT_WRITER_MODEL') ??
-        'openai/gpt-4.1-mini',
+      architectModel: this.architectModel,
+      writerModel: this.writerModel,
       architectReasoningEffort: 'high',
       writerReasoningEffort: 'none',
       temperature: 0.7,

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/Badge";
+import Badge from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useDeleteProjectMutation } from "@/hooks/mutations/useDeleteProjectMutation.hook";
 import { useUiStore } from "@/store/ui.store";
