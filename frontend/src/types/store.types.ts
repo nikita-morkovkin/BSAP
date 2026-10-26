@@ -1,4 +1,4 @@
-export type NavigationTab = 'create' | 'monitor' | 'downloads';
+export type NavigationTab = 'create' | 'monitor' | 'downloads' | 'music';
 export type Theme = 'light' | 'dark';
 
 export type AudioPlayerState = {

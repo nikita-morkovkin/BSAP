@@ -14,6 +14,8 @@ import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
+import { MusicModule } from '../music/music.module';
+import { ProjectMusicController } from './project-music.controller';
 
 @Module({
   imports: [
@@ -31,8 +33,14 @@ import { ProjectsService } from './projects.service';
     TextModule,
     TtsModule,
     AudioModule,
+    MusicModule,
   ],
-  controllers: [ProjectsController, MediaController, SettingsController],
+  controllers: [
+    ProjectsController,
+    MediaController,
+    SettingsController,
+    ProjectMusicController,
+  ],
   providers: [
     ProjectsService,
     MediaService,

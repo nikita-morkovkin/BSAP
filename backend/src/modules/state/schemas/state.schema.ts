@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { artifactPathSchema } from './artifact-path.schema';
 import { chapterSchema } from './chapter.schema';
 import { profileSchema } from './profile.schema';
+import { projectMusicSchema } from '../../music/schemas/project-music.schema';
 
 export const stateSchema = z
   .strictObject({
@@ -20,6 +21,9 @@ export const stateSchema = z
       'CANCELLED',
     ]),
     error: z.string().optional(),
+    music: projectMusicSchema.optional(),
+    mixRevision: z.number().int().nonnegative().optional(),
+    mixNeedsRebuild: z.boolean().optional(),
     profile: profileSchema,
     outlineCompleted: z.boolean(),
     chapters: z

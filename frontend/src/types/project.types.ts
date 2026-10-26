@@ -1,3 +1,5 @@
+import type { ProjectMusic } from './music.types';
+
 export type ReasoningEffort = string;
 export type PipelineStatus = 'IDLE' | 'IN_PROGRESS' | 'GENERATING_OUTLINE'
   | 'GENERATING_SCRIPTS' | 'SYNTHESIZING_AUDIO' | 'MASTERING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
@@ -51,6 +53,9 @@ export type ProjectSummary = {
 };
 
 export type ProjectState = ProjectSummary & {
+  music?: ProjectMusic;
+  mixRevision?: number;
+  mixNeedsRebuild?: boolean;
   profile: Profile;
   outlineCompleted: boolean;
   chapters: Record<string, Chapter>;
@@ -66,11 +71,12 @@ export type OutlineChapter = {
 };
 
 export type ProjectDetail = {
+  productionBusy?: boolean;
   state: ProjectState;
   outline: { topic: string; totalChapters: number; chapters: OutlineChapter[] } | null;
 };
 
-export type CreateProjectPayload = { topic: string; profile: Profile };
+export type CreateProjectPayload = { topic: string; profile: Profile; selectedTrackIds?: string[] };
 export type RegenerateChunkPayload = Partial<Pick<Chunk, 'text' | 'ttsVoice' | 'ttsSpeed' | 'pauseAfterMs'>>;
 export type RegenerateChunkVariables = {
   chapterNumber: number;

@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
-import { basename, dirname, extname, join, relative, resolve } from 'path';
+import { basename, dirname, extname, relative } from 'path';
 import { writeArtifact } from '../../utils/write-artifact.util';
+import { ProjectMusicService } from '../music/project-music.service';
 import { StateManagerService } from '../state/state-manager.service';
 import { MasterProjectQueueService } from './master-project-queue.service';
 import { MetadataExporterService } from './metadata-exporter.service';
@@ -15,6 +16,7 @@ export class FfmpegService {
     private readonly stateManagerService: StateManagerService,
     private readonly masterProjectQueueService: MasterProjectQueueService,
     private readonly metadataExporterService: MetadataExporterService,
+    private readonly projectMusicService: ProjectMusicService,
   ) {}
 
   public async assembleChapter(
@@ -98,27 +100,13 @@ export class FfmpegService {
     }
   }
 
-  public async buildAmbientBed(projectId: string): Promise<string> {
+  public async buildAmbientBed(projectId: string): Promise<string | null> {
     const state = await this.stateManagerService.getState(projectId);
     const config = state.profile.masteringConfig;
-    const root =
-      basename(process.cwd()) === 'backend'
-        ? resolve(process.cwd(), '..')
-        : process.cwd();
-    const directory = resolve(
-      this.configService.get<string>('AMBIENT_DIR') ??
-        join(root, 'assets', 'ambient'),
-    );
-    const entries = await fs.readdir(directory, { withFileTypes: true });
-    const tracks = entries
-      .filter(
-        (entry) =>
-          entry.isFile() && extname(entry.name).toLowerCase() === '.wav',
-      )
-      .sort((left, right) => left.name.localeCompare(right.name));
+    const tracks = await this.projectMusicService.paths(projectId);
 
     if (tracks.length === 0) {
-      throw new Error(`No ambient WAV tracks found in ${directory}`);
+      return null;
     }
 
     const inputs: string[] = [];
@@ -126,8 +114,7 @@ export class FfmpegService {
     const fade = config.ambientCrossfadeSeconds;
     let duration = 0;
 
-    for (const [index, track] of tracks.entries()) {
-      const path = join(directory, track.name);
+    for (const [index, path] of tracks.entries()) {
       const length = Math.max(
         (await this.getDurationSeconds(path)) / config.ambientSpeed,
         fade * 2 + 1,
@@ -192,7 +179,8 @@ export class FfmpegService {
   }
 
   public async masterProject(projectId: string): Promise<void> {
-    const state = await this.stateManagerService.getState(projectId);
+    const state = await this.projectMusicService.initialize(projectId);
+    const selectionRevision = state.music!.revision;
     const chapters = Object.values(state.chapters).sort(
       (left, right) => left.chapterNumber - right.chapterNumber,
     );
@@ -233,17 +221,14 @@ export class FfmpegService {
     );
     const filter = [
       `[0:a]highpass=f=${config.highpassHz},equalizer=f=${config.warmthFrequencyHz}:t=q:w=1.2:g=${config.warmthGainDb},deesser=i=${config.deesserIntensity}:m=0.5:f=0.5:s=o,lowpass=f=${config.lowpassHz},acompressor=threshold=${config.compressorThresholdDb}dB:ratio=${config.compressorRatio}:attack=20:release=250,loudnorm=I=${config.loudnessLufs}:TP=${config.truePeakDb}:LRA=${config.loudnessRange},apad=pad_dur=${config.paddingSeconds}[voice]`,
-      `[1:a]volume=${config.ambientVolumeDb}dB[ambient]`,
-      `[voice][ambient]amix=inputs=2:duration=first:dropout_transition=0,afade=t=out:st=${duration + config.paddingSeconds - fadeDuration}:d=${fadeDuration}[out]`,
+      ...(ambient ? [`[1:a]volume=${config.ambientVolumeDb}dB[ambient]`] : []),
+      `${ambient ? '[voice][ambient]amix=inputs=2:duration=first:dropout_transition=0,' : '[voice]'}afade=t=out:st=${duration + config.paddingSeconds - fadeDuration}:d=${fadeDuration}[out]`,
     ].join(';');
 
     await this.render(artifact('output/master_final.wav'), [
       '-i',
       voice,
-      '-stream_loop',
-      '-1',
-      '-i',
-      ambient,
+      ...(ambient ? ['-stream_loop', '-1', '-i', ambient] : []),
       '-filter_complex',
       filter,
       '-map',
@@ -264,7 +249,17 @@ export class FfmpegService {
       's16',
     ]);
     await this.metadataExporterService.export(projectId);
+    await writeArtifact(
+      artifact('output/music_manifest.json'),
+      JSON.stringify(state.music, null, 2),
+    );
     await this.stateManagerService.updateState(projectId, (current) => {
+      if (current.music?.revision !== selectionRevision) {
+        throw new Error(
+          'Soundtrack revision changed during mastering; outputs were not committed',
+        );
+      }
+
       current.outputFiles = {
         wav: 'output/master_final.wav',
         flac: 'output/master_final.flac',
@@ -272,6 +267,8 @@ export class FfmpegService {
         markers: 'output/timeline_markers.csv',
       };
       current.status = 'COMPLETED';
+      current.mixRevision = selectionRevision;
+      current.mixNeedsRebuild = false;
 
       delete current.error;
     });

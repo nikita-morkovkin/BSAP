@@ -5,10 +5,12 @@ import { useUiStore } from '@/store/ui.store';
 import CreateProjectView from '@/views/create/CreateProjectView';
 import DownloadsPanel from '@/views/downloads/DownloadsPanel';
 import ProjectDetailView from '@/views/project/ProjectDetailView';
+import MusicLibraryView from '@/views/music/MusicLibraryView';
 
 const App = () => {
   const activeTab = useUiStore((state) => state.activeTab);
   const projectId = useUiStore((state) => state.selectedProjectId);
+  const createHidden = activeTab !== 'create';
 
   return (
     <div className="min-h-dvh lg:flex">
@@ -16,7 +18,8 @@ const App = () => {
       <div className="flex min-w-0 flex-1 flex-col">
         <Navigation />
         <main className="mx-auto w-full max-w-6xl flex-1 p-4 py-8 sm:p-8 lg:p-10">
-          {activeTab === 'create' && <CreateProjectView />}
+          <div hidden={createHidden}><CreateProjectView /></div>
+          {activeTab === 'music' && <MusicLibraryView />}
           {activeTab === 'monitor' && projectId && <ProjectDetailView projectId={projectId} />}
           {activeTab === 'downloads' && projectId && <DownloadsPanel projectId={projectId} />}
         </main>

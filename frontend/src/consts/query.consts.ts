@@ -1,4 +1,5 @@
 export const queryKeys = {
+  music: ['music'] as const,
   projects: ['projects'] as const,
   defaults: ['project-defaults'] as const,
   project: (id: string) => ['project', id] as const,

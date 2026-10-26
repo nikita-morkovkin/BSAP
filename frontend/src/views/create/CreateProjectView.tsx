@@ -1,12 +1,15 @@
 import QueryFeedback from "@/components/common/QueryFeedback";
 import { useProjectDefaults } from "@/hooks/queries/useProjectDefaults.hook";
 import ProjectForm from "./ProjectForm";
+import { useMusic } from '@/hooks/queries/useMusic.hook';
 
 const CreateProjectView = () => {
   const query = useProjectDefaults();
+  const music = useMusic();
 
   const handleRetry = () => {
     query.refetch();
+    music.refetch();
   };
 
   return (
@@ -32,7 +35,9 @@ const CreateProjectView = () => {
           onRetry={handleRetry}
         />
       )}
-      {query.data && <ProjectForm defaults={query.data} />}
+      {music.isPending && <p role="status">Loading soundtrack choices…</p>}
+      {music.isError && <QueryFeedback error message="Could not load soundtrack choices." onRetry={handleRetry} />}
+      {query.data && music.data && <ProjectForm defaults={query.data} tracks={music.data.tracks} />}
     </section>
   );
 };

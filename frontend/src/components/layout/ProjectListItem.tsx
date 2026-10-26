@@ -52,7 +52,7 @@ const ProjectListItem = ({ project }: ProjectListItemProps) => {
         disabled={deletion.isPending}
         aria-label={`Delete ${project.topic}`}
         title="Delete episode"
-        onClick={() => handleClick}
+        onClick={handleClick}
       >
         <Trash2 />
       </Button>

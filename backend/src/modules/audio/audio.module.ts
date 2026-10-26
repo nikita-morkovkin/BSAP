@@ -7,11 +7,13 @@ import { AudioProcessor } from './audio.processor';
 import { FfmpegService } from './ffmpeg.service';
 import { MasterProjectQueueService } from './master-project-queue.service';
 import { MetadataExporterService } from './metadata-exporter.service';
+import { MusicModule } from '../music/music.module';
 
 @Module({
   imports: [
     ConfigModule,
     StateModule,
+    MusicModule,
     BullModule.registerQueue({ name: PIPELINE_JOBS.audioMasteringQueue }),
   ],
   providers: [

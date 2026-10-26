@@ -18,6 +18,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { RegenerateChunkDto } from './dto/regenerate-chunk.dto';
 import { ProjectDeletionService } from './project-deletion.service';
 import type { ProjectSummary } from './types/project-summary.type';
+import { ProjectMusicService } from '../music/project-music.service';
 
 @Injectable()
 export class ProjectsService {
@@ -34,6 +35,7 @@ export class ProjectsService {
     private readonly masterProjectQueueService: MasterProjectQueueService,
     private readonly projectDeletionService: ProjectDeletionService,
     private readonly scriptGeneratorService: ScriptGeneratorService,
+    private readonly projectMusicService: ProjectMusicService,
   ) {
     this.architectModel = this.configService.getOrThrow<string>(
       'DEFAULT_ARCHITECT_MODEL',
@@ -84,9 +86,22 @@ export class ProjectsService {
       payload.profile,
     );
 
+    let initialized: State;
+
+    try {
+      initialized = await this.projectMusicService.initialize(
+        state.projectId,
+        payload.selectedTrackIds,
+      );
+    } catch (error) {
+      await this.stateManagerService.deleteProject(state.projectId);
+
+      throw error;
+    }
+
     await this.scriptQueueService.enqueueProject(state.projectId);
 
-    return state;
+    return initialized;
   }
 
   public async deleteProject(projectId: string): Promise<void> {
@@ -119,7 +134,7 @@ export class ProjectsService {
 
   public async getProject(
     projectId: string,
-  ): Promise<{ state: State; outline: Outline | null }> {
+  ): Promise<{ state: State; outline: Outline | null; productionBusy: boolean }> {
     const state = await this.getState(projectId);
     const path = this.stateManagerService.getArtifactPath(
       projectId,
@@ -142,7 +157,9 @@ export class ProjectsService {
       }
     }
 
-    return { state, outline };
+    const productionBusy = await this.projectMusicService.isBusy(projectId);
+
+    return { state, outline, productionBusy };
   }
 
   public async resume(projectId: string): Promise<State> {
@@ -219,7 +236,14 @@ export class ProjectsService {
       );
     });
 
-    if (!pendingAudio && (state.status !== 'COMPLETED' || missingOutput)) {
+    if (
+      !pendingAudio &&
+      (state.status !== 'COMPLETED' ||
+        missingOutput ||
+        state.mixNeedsRebuild ||
+        (state.music !== undefined &&
+          state.mixRevision !== state.music.revision))
+    ) {
       await this.masterProjectQueueService.enqueueProject(projectId);
     }
 

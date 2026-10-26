@@ -9,3 +9,4 @@ Given a single topic, BSAP orchestrates the entire production lifecycle:
 3. Synthesizes consistent, warm, elderly-narrator speech locally on a consumer GPU.
 4. Stitches audio chunks with natural pauses, mixes in a seamless ambient background bed, and runs an automated broadcast-grade studio mastering chain.
 5. Provides a React web interface to configure prompts/models, monitor real-time progress, preview or regenerate individual audio chunks, and download the final master audio alongside YouTube timestamps and video editor timeline markers.
+6. Manages a reusable WAV music library with upload, rename, replacement, and deletion. Ordered per-project inclusion checkboxes create immutable local soundtrack copies; library edits never alter a saved soundtrack. Empty selections produce narration-only masters. Rebuild mix reuses assembled narration without regenerating scripts or TTS.

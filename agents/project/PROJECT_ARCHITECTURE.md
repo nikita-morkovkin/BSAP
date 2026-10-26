@@ -1,3 +1,9 @@
+# Project architecture
+
+## Music management
+
+See [MUSIC_MANAGEMENT.md](MUSIC_MANAGEMENT.md) for catalog persistence, immutable project snapshots, API contracts, revision-aware remastering, recovery and upload limits.
+
 ## Key Architectural Decisions & Rationale
 
 ### 1. Two-Tier LLM Routing & Reasoning Control (Cost Optimization)

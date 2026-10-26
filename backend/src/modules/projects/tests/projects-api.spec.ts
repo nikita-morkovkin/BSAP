@@ -22,6 +22,11 @@ import { ProjectsController } from '../projects.controller';
 import { ProjectsService } from '../projects.service';
 import { ProjectDeletionService } from '../project-deletion.service';
 import { ScriptGeneratorService } from '../../llm/script-generator.service';
+import { ProjectMusicService } from '../../music/project-music.service';
+import { MusicService } from '../../music/music.service';
+import { MusicProbeService } from '../../music/music-probe.service';
+import { getQueueToken } from '@nestjs/bullmq';
+import { PIPELINE_JOBS } from '../../queue/consts';
 
 describe('Projects REST API', () => {
   let app: INestApplication<Server>;
@@ -49,6 +54,18 @@ describe('Projects REST API', () => {
         MediaService,
         StateManagerService,
         PromptService,
+        ProjectMusicService,
+        MusicService,
+        MusicProbeService,
+        ...[
+          PIPELINE_JOBS.scriptQueue,
+          PIPELINE_JOBS.textQueue,
+          PIPELINE_JOBS.ttsQueue,
+          PIPELINE_JOBS.audioMasteringQueue,
+        ].map((name) => ({
+          provide: getQueueToken(name),
+          useValue: { getJobs: () => Promise.resolve([]) },
+        })),
         {
           provide: ProjectDeletionService,
           useValue: {
@@ -79,6 +96,9 @@ describe('Projects REST API', () => {
           provide: ConfigService,
           useValue: new ConfigService({
             PROJECTS_DIR: directory,
+            DEFAULT_ARCHITECT_MODEL: 'test-architect',
+            DEFAULT_WRITER_MODEL: 'test-writer',
+            AMBIENT_DIR: join(directory, 'ambient'),
             PROMPTS_DIR: resolve(__dirname, '../../../../../prompts'),
           }),
         },
@@ -219,6 +239,7 @@ describe('Projects REST API', () => {
     expect(detail.body).toEqual({
       state: await manager.getState(state.projectId),
       outline: null,
+      productionBusy: false,
     });
 
     const outline = {

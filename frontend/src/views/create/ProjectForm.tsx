@@ -11,11 +11,13 @@ import type { SubmitEvent } from "react";
 import ProfileTextField from "./ProfileTextField";
 import PromptStudio from "./PromptStudio";
 import ReasoningSelect from "./ReasoningSelect";
+import MusicSelector from '@/components/music/MusicSelector';
+import type { MusicTrack } from '@/types/music.types';
 
-type ProjectFormProps = { defaults: Profile };
+type ProjectFormProps = { defaults: Profile; tracks: MusicTrack[] };
 
-const ProjectForm = ({ defaults }: ProjectFormProps) => {
-  const form = useProjectForm({ defaults });
+const ProjectForm = ({ defaults, tracks }: ProjectFormProps) => {
+  const form = useProjectForm({ defaults, tracks });
   const { profile } = form;
   const models = useModels();
   const voices = useVoices();
@@ -164,6 +166,7 @@ const ProjectForm = ({ defaults }: ProjectFormProps) => {
           />
         </div>
         <PromptStudio profile={profile} onChange={form.handleProfile} />
+        <MusicSelector tracks={tracks} selected={form.selectedTrackIds} onChange={form.setSelectedTrackIds} />
         <Button type="submit" size="lg" disabled={form.isPending || !ready}>
           <Sparkles />
           {submitLabel}

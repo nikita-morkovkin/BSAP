@@ -6,4 +6,5 @@ export class CreateProjectDto {
 
   public topic!: string;
   public profile!: Profile;
+  public selectedTrackIds?: string[];
 }

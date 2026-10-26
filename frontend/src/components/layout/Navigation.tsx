@@ -13,7 +13,12 @@ const Navigation = () => {
   const ThemeIcon = theme === "dark" ? Sun : Moon;
 
   const handleTabChange = (value: unknown) => {
-    if (value === "create" || value === "monitor" || value === "downloads") {
+    if (
+      value === "create" ||
+      value === "monitor" ||
+      value === "downloads" ||
+      value === "music"
+    ) {
       useUiStore.getState().setActiveTab(value);
     }
   };
@@ -28,6 +33,7 @@ const Navigation = () => {
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList aria-label="Studio sections">
             <TabsTrigger value="create">Create</TabsTrigger>
+            <TabsTrigger value="music">Music Library</TabsTrigger>
             <TabsTrigger value="monitor" disabled={projectDisabled}>
               Monitor
             </TabsTrigger>

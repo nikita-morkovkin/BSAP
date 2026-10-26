@@ -11,5 +11,5 @@ export const useProject = ({ id }: HookProps): ReturnProps => useQuery({
   queryKey: queryKeys.project(id),
   queryFn: ({ signal }) => apiClient.projects.getProject(id, signal),
   enabled: Boolean(id),
-  refetchInterval: (query) => projectPollingInterval(query.state.data?.state.status),
+  refetchInterval: (query) => query.state.data?.productionBusy ? 1500 : projectPollingInterval(query.state.data?.state.status),
 });

@@ -1,4 +1,5 @@
 import { mediaApi } from './media.api';
 import { projectsApi } from './projects.api';
+import { musicApi } from './music.api';
 
-export const apiClient = { projects: projectsApi, media: mediaApi };
+export const apiClient = { projects: projectsApi, media: mediaApi, music: musicApi };

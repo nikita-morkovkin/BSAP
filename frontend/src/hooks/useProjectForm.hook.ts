@@ -2,9 +2,12 @@ import { useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import { useCreateProjectMutation } from './mutations/useCreateProjectMutation.hook';
 import type { Profile, ReasoningEffort } from '@/types/project.types';
 import type { ProfileInputEvent } from '@/types/form.types';
+import type { MusicTrack } from '@/types/music.types';
 
-type HookProps = { defaults: Profile };
+type HookProps = { defaults: Profile; tracks: MusicTrack[] };
 type ReturnProps = {
+  selectedTrackIds: string[];
+  setSelectedTrackIds: (ids: string[]) => void;
   topic: string;
   profile: Profile;
   isPending: boolean;
@@ -17,7 +20,8 @@ type ReturnProps = {
   updateProfile: (patch: Partial<Profile>) => void;
 };
 
-export const useProjectForm = ({ defaults }: HookProps): ReturnProps => {
+export const useProjectForm = ({ defaults, tracks }: HookProps): ReturnProps => {
+  const [selectedTrackIds, setSelectedTrackIds] = useState(() => tracks.filter((track) => track.available).map((track) => track.id));
   const [topic, setTopic] = useState('');
   const [profile, setProfile] = useState(defaults);
   const mutation = useCreateProjectMutation();
@@ -51,10 +55,11 @@ export const useProjectForm = ({ defaults }: HookProps): ReturnProps => {
       return;
     }
 
-    mutation.mutate({ topic: topic.trim(), profile: { ...profile, ...overrides } });
+    mutation.mutate({ topic: topic.trim(), profile: { ...profile, ...overrides }, selectedTrackIds });
   };
 
   return {
+    selectedTrackIds, setSelectedTrackIds,
     updateProfile: (patch) => setProfile((current) => ({ ...current, ...patch })),
     topic, profile, isPending: mutation.isPending, handleTopic, handleProfile,
     handleArchitectEffort, handleWriterEffort, handleSpeed, handleSubmit,
