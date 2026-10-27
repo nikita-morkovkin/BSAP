@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import { basename, dirname, extname, relative } from 'path';
 import { writeArtifact } from '../../utils/write-artifact.util';
+import { audioInputHash } from '../../utils/audio-input-hash.util';
 import { ProjectMusicService } from '../music/project-music.service';
 import { StateManagerService } from '../state/state-manager.service';
 import { MasterProjectQueueService } from './master-project-queue.service';
@@ -234,10 +235,50 @@ export class FfmpegService {
     const artifact = (path: string): string =>
       this.stateManagerService.getArtifactPath(projectId, path);
     const voice = artifact('output/voice_raw_full.wav');
+    const greeting = await this.getGreetingSegment(projectId);
+    const greetingFiles: string[] = [];
+
+    if (state.video?.greeting?.enabled) {
+      if (
+        !greeting ||
+        state.video.greetingAudio?.hash !== this.greetingHash(state)
+      ) {
+        throw new Error(
+          'Greeting audio is missing or outdated; explicitly regenerate greeting audio',
+        );
+      }
+
+      if (greeting.startSec > 0) {
+        greetingFiles.push(
+          await this.ensureSilence(
+            projectId,
+            Math.round(greeting.startSec * 1000),
+          ),
+        );
+      }
+
+      const normalized = artifact('video/character/greeting_normalized.wav');
+
+      await this.render(normalized, [
+        '-i',
+        greeting.audioPath,
+        '-ar',
+        '24000',
+        '-ac',
+        '1',
+        '-c:a',
+        'pcm_s16le',
+      ]);
+
+      greetingFiles.push(normalized);
+    }
 
     await this.concatenate(
       artifact('output/voice_concat.txt'),
-      chapters.map((chapter) => artifact(chapter.audioFilePath)),
+      [
+        ...greetingFiles,
+        ...chapters.map((chapter) => artifact(chapter.audioFilePath)),
+      ],
       voice,
     );
 
@@ -349,6 +390,7 @@ export class FfmpegService {
       current.status = 'COMPLETED';
       current.mixRevision = selectionRevision;
       current.mixNeedsRebuild = false;
+      current.audioInputHash = audioInputHash(current);
 
       delete current.error;
     });
@@ -378,6 +420,26 @@ export class FfmpegService {
     }
 
     return duration;
+  }
+
+  public async getGreetingSegment(
+    projectId: string,
+  ): Promise<{ audioPath: string; startSec: number; endSec: number } | null> {
+    const state = await this.stateManagerService.getState(projectId);
+    const audio = state.video?.greetingAudio;
+
+    if (!audio || !state.video?.greeting?.enabled) {
+      return null;
+    }
+
+    return {
+      audioPath: this.stateManagerService.getArtifactPath(
+        projectId,
+        audio.path,
+      ),
+      startSec: audio.startSec,
+      endSec: audio.endSec,
+    };
   }
 
   public async getFinalAudioInfo(projectId: string) {
@@ -582,5 +644,29 @@ export class FfmpegService {
     } finally {
       await fs.rm(temporary, { force: true });
     }
+  }
+
+  private greetingHash(
+    state: import('../state/types/state.type').State,
+  ): string {
+    if (state.video?.greeting?.lipSyncMode === 'native_veo_audio') {
+      return createHash('sha256')
+        .update(
+          JSON.stringify({ nativeClipId: state.video.greeting.nativeClipId }),
+        )
+        .digest('hex')
+        .slice(0, 24);
+    }
+
+    return createHash('sha256')
+      .update(
+        JSON.stringify({
+          text: state.video?.greeting?.text,
+          voice: state.profile.ttsVoice,
+          speed: state.profile.ttsSpeed,
+        }),
+      )
+      .digest('hex')
+      .slice(0, 24);
   }
 }

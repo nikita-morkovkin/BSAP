@@ -7,5 +7,8 @@ export const gradeFilter = (style: VideoStyleConfig): string =>
     'setsar=1',
     `eq=brightness=${style.brightness}:contrast=${style.contrast}:saturation=${style.saturation}:gamma=${style.gamma}`,
     ...(style.vignetteEnabled ? [`vignette=angle=${style.vignetteAngle}`] : []),
+    ...(style.antiBanding
+      ? ['gradfun=strength=1.0:radius=16', 'noise=alls=2:allf=t']
+      : []),
     'format=yuv420p',
   ].join(',');

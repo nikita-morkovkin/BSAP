@@ -6,3 +6,8 @@ export { encoderArgs } from './encoder-args.util';
 export { gradeFilter } from './grade-filter.util';
 export { chunkSlices } from './chunk-slices.util';
 export { chunkFilter } from './chunk-filter.util';
+export { effectFilter } from './effect-filter.util';
+export { effectiveEffects } from './effective-effects.util';
+export { analyzeVad } from './analyze-vad.util';
+export { greetingCompositeFilter } from './greeting-composite-filter.util';
+export { presetField } from './preset-field.util';

@@ -16,6 +16,7 @@ export const videoStyleSchema = z
     saturation: z.number().min(0).max(1.5).default(0.75),
     gamma: z.number().min(0.5).max(1.5).default(0.85),
     vignetteEnabled: z.boolean().default(true),
+    antiBanding: z.boolean().default(true),
     vignetteAngle: z.enum(['PI/3', 'PI/4', 'PI/5', 'PI/6']).default('PI/4'),
     mirrorOnRepeat: z.boolean().default(true),
     cycleTargetMinutes: z.number().min(0.25).max(90).default(45),

@@ -14,6 +14,12 @@ import { VideoPlannerService } from './video-planner.service';
 import { VideoChunkRendererService } from './video-chunk-renderer.service';
 import { VideoFinalMuxService } from './video-final-mux.service';
 import { VideoJobService } from './video-job.service';
+import { VideoFullService } from './video-full.service';
+import { GreetingAudioService } from './greeting-audio.service';
+import { GreetingPreviewService } from './greeting-preview.service';
+import { VideoInputsService } from './video-inputs.service';
+import { EffectGeneratorService } from './effect-generator.service';
+import { ExternalLipSyncService } from './external-lip-sync.service';
 
 @Processor('video', { concurrency: 1 })
 export class VideoProcessor extends WorkerHost {
@@ -26,6 +32,12 @@ export class VideoProcessor extends WorkerHost {
     private readonly muxer: VideoFinalMuxService,
     private readonly ffmpeg: FfmpegService,
     private readonly jobs: VideoJobService,
+    private readonly full: VideoFullService,
+    private readonly greetingAudio: GreetingAudioService,
+    private readonly greetingPreview: GreetingPreviewService,
+    private readonly inputs: VideoInputsService,
+    private readonly effects: EffectGeneratorService,
+    private readonly external: ExternalLipSyncService,
   ) {
     super();
   }
@@ -67,6 +79,89 @@ export class VideoProcessor extends WorkerHost {
       const saved = await this.jobs.get(projectId, jobId);
 
       if (saved.stage !== 'queued') {
+        return;
+      }
+
+      if (kind === 'video_full') {
+        const outputPath = await this.full.build(
+          projectId,
+          task.durationSec,
+          signal,
+          (value) => report('muxing', value),
+          task.includeGreeting,
+        );
+
+        await updates;
+        await this.jobs.update(projectId, jobId, {
+          stage: 'done',
+          progress: 1,
+          stageProgress: 1,
+          outputPath,
+        });
+
+        return;
+      }
+
+      if (kind === 'greeting_lipsync') {
+        report('rendering_chunks', 0);
+
+        const outputPath = await this.external.build(
+          projectId,
+          task.confirm === true,
+          signal,
+        );
+
+        await updates;
+        await this.jobs.update(projectId, jobId, {
+          stage: 'done',
+          progress: 1,
+          stageProgress: 1,
+          outputPath,
+        });
+
+        return;
+      }
+
+      if (kind === 'effect_preset' && task.preset) {
+        report('normalizing', 0);
+
+        const outputPath = await this.effects.generate(
+          projectId,
+          task.preset,
+          signal,
+        );
+
+        await updates;
+        await this.jobs.update(projectId, jobId, {
+          stage: 'done',
+          progress: 1,
+          stageProgress: 1,
+          outputPath,
+        });
+
+        return;
+      }
+
+      if (kind === 'greeting_audio' || kind === 'greeting_preview') {
+        report('muxing', 0);
+
+        const outputPath =
+          kind === 'greeting_preview'
+            ? await this.greetingPreview.build(projectId, signal)
+            : undefined;
+
+        if (kind === 'greeting_audio') {
+          await this.greetingAudio.regenerate(projectId, signal);
+        }
+
+        await updates;
+        await this.jobs.update(projectId, jobId, {
+          stage: 'done',
+          progress: 1,
+          stageProgress: 1,
+          outputPath,
+        });
+
         return;
       }
 
@@ -162,6 +257,8 @@ export class VideoProcessor extends WorkerHost {
 
         signal.throwIfAborted();
 
+        const inputHash = await this.inputs.cycle(projectId);
+
         await this.state.updateState(projectId, (current) => {
           if (
             current.video &&
@@ -178,6 +275,7 @@ export class VideoProcessor extends WorkerHost {
               current.video.cycle = {
                 path,
                 planHash: plan.planHash,
+                inputHash,
                 duration: Number(probe.format.duration),
                 loop: Boolean(plan.loopWindow),
                 fps: style.fps,

@@ -22,9 +22,12 @@ export class VideoLibraryService {
     private readonly ffmpeg: FfmpegService,
   ) {}
 
-  public async list(projectId: string): Promise<StockClipMeta[]> {
+  public async list(
+    projectId: string,
+    scope = 'library',
+  ): Promise<StockClipMeta[]> {
     const state = await this.state.getState(projectId);
-    const root = this.path(projectId, 'library');
+    const root = this.path(projectId, scope);
     const style = state.video?.style ?? videoStyleSchema.parse({});
 
     await fs.mkdir(root, { recursive: true });
@@ -34,7 +37,7 @@ export class VideoLibraryService {
 
     for (const entry of entries) {
       if (entry.isDirectory() && /^[a-f0-9]{16}$/.test(entry.name)) {
-        const clip = await this.get(projectId, entry.name);
+        const clip = await this.get(projectId, entry.name, scope);
 
         clips.push({
           ...clip,
@@ -46,7 +49,11 @@ export class VideoLibraryService {
     return clips;
   }
 
-  public async get(projectId: string, clipId: string): Promise<StockClipMeta> {
+  public async get(
+    projectId: string,
+    clipId: string,
+    scope = 'library',
+  ): Promise<StockClipMeta> {
     if (!/^[a-f0-9]{16}$/.test(clipId)) {
       throw new BadRequestException('Invalid clip ID');
     }
@@ -54,7 +61,7 @@ export class VideoLibraryService {
     try {
       return JSON.parse(
         await fs.readFile(
-          this.path(projectId, `library/${clipId}/meta.json`),
+          this.path(projectId, `${scope}/${clipId}/meta.json`),
           'utf8',
         ),
       ) as StockClipMeta;
@@ -66,6 +73,7 @@ export class VideoLibraryService {
   public async upload(
     projectId: string,
     file: VideoUpload,
+    scope = 'library',
   ): Promise<StockClipMeta> {
     await this.state.getState(projectId);
 
@@ -87,7 +95,7 @@ export class VideoLibraryService {
 
     const sha256 = hash.digest('hex');
     const id = sha256.slice(0, 16);
-    const existing = await this.get(projectId, id).catch(() => null);
+    const existing = await this.get(projectId, id, scope).catch(() => null);
 
     if (existing) {
       return existing;
@@ -117,7 +125,7 @@ export class VideoLibraryService {
 
       return numerator / (denominator || 1);
     };
-    const relative = `video/library/${id}`;
+    const relative = `video/${scope}/${id}`;
     const clip: StockClipMeta = {
       id,
       sha256,
@@ -131,6 +139,11 @@ export class VideoLibraryService {
       codec: stream.codec_name ?? 'unknown',
       sizeBytes: file.size,
       hasVideoStream: true,
+      hasAudio: probe.streams.some((item) => item.codec_type === 'audio'),
+      hasAlpha: Boolean(
+        /^(yuva|gbrap|rgba|bgra|argb|abgr)/.test(stream.pix_fmt ?? '') ||
+        stream.tags?.alpha_mode === '1',
+      ),
       status: 'ready',
       enabled: true,
       vfr:
@@ -139,7 +152,7 @@ export class VideoLibraryService {
       normalizedDurations: {},
     };
 
-    await fs.mkdir(this.path(projectId, `library/${id}`), { recursive: true });
+    await fs.mkdir(this.path(projectId, `${scope}/${id}`), { recursive: true });
 
     try {
       await fs.copyFile(
@@ -159,9 +172,9 @@ export class VideoLibraryService {
           '1',
         ],
       );
-      await this.save(projectId, clip);
+      await this.save(projectId, clip, scope);
     } catch (error) {
-      await fs.rm(this.path(projectId, `library/${id}`), {
+      await fs.rm(this.path(projectId, `${scope}/${id}`), {
         recursive: true,
         force: true,
       });
@@ -172,9 +185,13 @@ export class VideoLibraryService {
     return clip;
   }
 
-  public async save(projectId: string, clip: StockClipMeta): Promise<void> {
+  public async save(
+    projectId: string,
+    clip: StockClipMeta,
+    scope = 'library',
+  ): Promise<void> {
     await writeArtifact(
-      this.path(projectId, `library/${clip.id}/meta.json`),
+      this.path(projectId, `${scope}/${clip.id}/meta.json`),
       JSON.stringify(clip, null, 2),
     );
   }
@@ -210,6 +227,7 @@ export class VideoLibraryService {
       'cycle',
       'preview',
       'final',
+      'full',
     ]) {
       await fs.rm(this.path(projectId, directory), {
         recursive: true,
@@ -222,6 +240,7 @@ export class VideoLibraryService {
         delete state.video.cycle;
         delete state.video.output;
         delete state.video.preview;
+        delete state.video.full;
       }
     });
   }

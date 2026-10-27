@@ -43,6 +43,10 @@ export class VideoJobService implements OnModuleInit {
     projectId: string,
     kind: VideoTask['kind'],
     style?: VideoStyleConfig,
+    durationSec?: number,
+    includeGreeting?: boolean,
+    preset?: VideoTask['preset'],
+    confirm?: boolean,
   ): Promise<VideoJobState> {
     const previous = (await this.state.getState(projectId)).video?.job;
 
@@ -83,7 +87,16 @@ export class VideoJobService implements OnModuleInit {
     try {
       await this.queue.add(
         kind,
-        { projectId, jobId, kind, style: selected },
+        {
+          projectId,
+          jobId,
+          kind,
+          style: selected,
+          durationSec,
+          includeGreeting,
+          preset,
+          confirm,
+        },
         { jobId, removeOnComplete: 100, removeOnFail: 100 },
       );
     } catch (error) {

@@ -15,7 +15,7 @@ export const videoText = {
   original: 'Original', graded: 'Graded', preview: 'Generate 30-second preview',
   build: 'Build final video', cycle: 'Build video cycle only', mux: 'Mux cycle with audio',
   clear: 'Clear video cache', audioMissing: 'Audio not ready yet', audioReady: 'Audio ready',
-  cancel: 'Cancel', download: 'Download MP4', output: 'Final video', cycleOutput: 'Video cycle',
+  cancel: 'Cancel', download: 'Download MP4', output: 'Final video', cycleOutput: 'Video loop (building block, no audio)',
   previewOutput: 'Preview', error: 'Video operation failed', details: 'Error details',
   loop: 'Short libraries are intentionally repeated to fill the cycle and audio duration.',
   saveError: 'Settings could not be saved. Check duration and crossfade ranges.',

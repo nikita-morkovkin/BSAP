@@ -1,0 +1,1 @@
+export type EffectPreset = 'marine_snow' | 'bubbles_rising' | 'light_rays' | 'dust_motes' | 'plankton_sparkle';

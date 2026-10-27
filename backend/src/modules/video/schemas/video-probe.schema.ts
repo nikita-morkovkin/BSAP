@@ -10,6 +10,7 @@ export const videoProbeSchema = z.object({
       avg_frame_rate: z.string().optional(),
       r_frame_rate: z.string().optional(),
       pix_fmt: z.string().optional(),
+      tags: z.object({ alpha_mode: z.string().optional() }).optional(),
       duration: z.string().optional(),
     }),
   ),

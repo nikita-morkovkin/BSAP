@@ -2,6 +2,7 @@ import { apiClient } from '@/api/apiClient';
 import Button from '@/components/ui/Button';
 import type { StockClip } from '@/types/video.types';
 import { videoText } from './consts/video-text.const';
+import ClipEffects from './ClipEffects';
 
 type ClipCardProps = {
   projectId: string; clip: StockClip; busy: boolean;
@@ -24,6 +25,7 @@ const ClipCard = ({ projectId, clip, busy, onToggle, onDelete }: ClipCardProps) 
       {stretched && <p className="text-xs">{videoText.stretched} → {clip.plannedDurationSec?.toFixed(1)}s</p>}
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={clip.enabled} disabled={busy} onChange={toggle} />{videoText.enabled}</label>
       <Button variant="outline" size="sm" disabled={busy} onClick={remove}>{videoText.remove}</Button>
+      <ClipEffects projectId={projectId} clipId={clip.id} busy={busy} />
     </article>
   );
 };

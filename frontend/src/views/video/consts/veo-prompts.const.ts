@@ -1,0 +1,4 @@
+export const veoPrompts = {
+  idle: 'Static locked camera. 2D storybook illustration style. An elderly wizard with wild gray hair, round glasses and a long white beard sits on a glowing cyan cloud under a starry night sky, reading a glowing book, eyes gently closed, slow breathing, beard and hair swaying very slightly, stars twinkling softly. No speech, no camera movement, no text. The last frame matches the first frame so the clip loops.',
+  talk: 'Static locked camera. Same character, same scene and framing as the reference image. The wizard looks up gently with a warm smile and speaks calmly, mouth opening and closing naturally as if saying a friendly greeting, subtle head nods. No camera movement, no text. Return to the neutral starting pose at the end.',
+};

@@ -5,6 +5,8 @@ import { StateManagerService } from '../state/state-manager.service';
 import { videoProbeSchema } from './schemas';
 import { videoHash } from './utils';
 import { VideoLibraryService } from './video-library.service';
+import { VideoFullService } from './video-full.service';
+import { VideoInputsService } from './video-inputs.service';
 
 @Injectable()
 export class VideoFinalMuxService {
@@ -12,6 +14,8 @@ export class VideoFinalMuxService {
     private readonly ffmpeg: FfmpegService,
     private readonly state: StateManagerService,
     private readonly library: VideoLibraryService,
+    private readonly full: VideoFullService,
+    private readonly inputs: VideoInputsService,
   ) {}
 
   public async mux(
@@ -33,7 +37,17 @@ export class VideoFinalMuxService {
       );
     }
 
+    const greetingInputs = state.video?.greeting?.enabled
+      ? await this.inputs.greeting(projectId)
+      : undefined;
     const hash = videoHash({
+      greetingInputs,
+      greeting: state.video?.greeting?.enabled
+        ? state.video.greeting
+        : undefined,
+      greetingAudio: state.video?.greeting?.enabled
+        ? state.video.greetingAudio
+        : undefined,
       cycle: cycle.planHash,
       audio: audio.revision,
       duration: audio.duration,
@@ -63,12 +77,22 @@ export class VideoFinalMuxService {
           stream.codec_type === 'audio' && stream.codec_name === 'aac',
       );
 
+      const greetingPath = state.video?.greeting?.enabled
+        ? await this.full.build(
+            projectId,
+            audio.duration,
+            signal,
+            onProgress,
+            true,
+          )
+        : undefined;
+
       await this.ffmpeg.renderMedia(
         path,
         [
-          ...(cycle.loop ? ['-stream_loop', '-1'] : []),
+          ...(cycle.loop && !greetingPath ? ['-stream_loop', '-1'] : []),
           '-i',
-          this.state.getArtifactPath(projectId, cycle.path),
+          this.state.getArtifactPath(projectId, greetingPath ?? cycle.path),
           '-i',
           audio.path,
           '-map',
@@ -107,6 +131,9 @@ export class VideoFinalMuxService {
     await this.state.updateState(projectId, (current) => {
       if (current.video) {
         current.video.output = relative;
+        current.video.outputHash = audio.revision;
+        current.video.outputCycleHash = cycle.planHash;
+        current.video.outputGreetingHash = greetingInputs;
       }
     });
 

@@ -23,6 +23,7 @@ import { FfmpegService } from '../audio/ffmpeg.service';
 import { StateManagerService } from '../state/state-manager.service';
 import { VideoBuildDto } from './dto/video-build.dto';
 import { VideoFrameDto } from './dto/video-frame.dto';
+import { VideoFullDto } from './dto/video-full.dto';
 import { videoStyleSchema } from './schemas';
 import type { VideoStyleConfig } from './types/video-style.type';
 import type { VideoUpload } from './types/video-upload.type';
@@ -144,7 +145,15 @@ export class VideoController {
     @Body() body: VideoFrameDto,
     @Res() response: Response,
   ) {
-    response.sendFile(await this.preview.frame(id, body.style, body.clipId));
+    response.sendFile(
+      await this.preview.frame(
+        id,
+        body.style,
+        body.clipId,
+        body.effectIds,
+        body.t,
+      ),
+    );
   }
 
   @Post('preview/clip')
@@ -163,6 +172,17 @@ export class VideoController {
   @Post('mux')
   public async mux(@Param('id') id: string) {
     return this.jobs.start(id, 'mux');
+  }
+
+  @Post('exports/video-full')
+  public async full(@Param('id') id: string, @Body() body: VideoFullDto) {
+    return this.jobs.start(
+      id,
+      'video_full',
+      undefined,
+      body.durationSec,
+      body.includeGreeting,
+    );
   }
 
   @Get('jobs/:jobId')

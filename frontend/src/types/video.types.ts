@@ -6,6 +6,7 @@ export type VideoStyleConfig = {
   brightness: number; contrast: number; saturation: number; gamma: number;
   vignetteEnabled: boolean; vignetteAngle: 'PI/3' | 'PI/4' | 'PI/5' | 'PI/6';
   mirrorOnRepeat: boolean; cycleTargetMinutes: number; seed: number;
+  antiBanding: boolean;
 };
 
 export type StockClip = {
@@ -17,7 +18,7 @@ export type StockClip = {
 
 export type VideoJob = {
   jobId: string; projectId: string;
-  kind: 'build' | 'preview' | 'mux';
+  kind: 'build' | 'preview' | 'mux' | 'video_full' | 'greeting_audio' | 'greeting_preview' | 'effect_preset' | 'greeting_lipsync';
   stage: 'queued' | 'normalizing' | 'planning' | 'rendering_chunks' | 'stitching' | 'muxing' | 'done' | 'failed' | 'cancelled';
   progress: number; stageProgress: number; message?: string; error?: string;
   outputPath?: string; startedAt: string; updatedAt: string;

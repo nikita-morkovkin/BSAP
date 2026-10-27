@@ -3,7 +3,8 @@ import { videoHash } from './video-hash.util';
 
 export const styleHash = (style: VideoStyleConfig): string =>
   videoHash({
-    version: 2,
+    version: 3,
+    antiBanding: style.antiBanding,
     width: style.width,
     height: style.height,
     fps: style.fps,

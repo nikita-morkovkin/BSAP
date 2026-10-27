@@ -4,6 +4,7 @@ import ChapterList from './ChapterList';
 import PipelineSummary from './PipelineSummary';
 import ProjectMusicPanel from './ProjectMusicPanel';
 import VideoStepPage from '@/views/video/VideoStepPage';
+import ExportsPanel from '@/views/exports/ExportsPanel';
 
 type ProjectDetailViewProps = { projectId: string };
 
@@ -28,6 +29,7 @@ const ProjectDetailView = ({ projectId }: ProjectDetailViewProps) => {
       <PipelineSummary state={state} />
       <ProjectMusicPanel key={state.projectId} state={state} productionBusy={query.data.productionBusy} />
       <VideoStepPage key={projectId} projectId={projectId} />
+      <ExportsPanel projectId={projectId} />
       <h2 className="text-xl font-semibold">Chapters & narration</h2>
       {Object.keys(state.chapters).length === 0 && (
         <div className="rounded-2xl border p-6 text-sm text-muted-foreground">

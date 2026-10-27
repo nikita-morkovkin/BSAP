@@ -26,6 +26,7 @@ export const stateSchema = z
     video: projectVideoSchema.optional(),
     mixRevision: z.number().int().nonnegative().optional(),
     mixNeedsRebuild: z.boolean().optional(),
+    audioInputHash: z.string().optional(),
     profile: profileSchema,
     outlineCompleted: z.boolean(),
     chapters: z
