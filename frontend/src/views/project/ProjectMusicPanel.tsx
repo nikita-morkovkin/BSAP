@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import MusicSelector from '@/components/music/MusicSelector';
 import { useMusic } from '@/hooks/queries/useMusic.hook';
 import { useProjectMusicMutation } from '@/hooks/mutations/useProjectMusicMutation.hook';
@@ -6,14 +6,19 @@ import type { ProjectState } from '@/types/project.types';
 import type { MusicTrack } from '@/types/music.types';
 
 type ProjectMusicPanelProps = { state: ProjectState; productionBusy?: boolean };
+type Draft = { ids: string[]; revision: number; ambientVolumeDb: number };
 
 const ProjectMusicPanel = ({ state, productionBusy }: ProjectMusicPanelProps) => {
   const library = useMusic();
   const mutation = useProjectMusicMutation({ projectId: state.projectId });
-  const [draft, setDraft] = useState<{ ids: string[]; revision: number } | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
   const saved = state.music;
   const selected = draft?.ids ?? saved?.selectedTrackIds ?? [];
-  const dirty = draft !== null && (!saved || JSON.stringify(selected) !== JSON.stringify(saved.selectedTrackIds));
+  const savedVolume = state.profile.masteringConfig.ambientVolumeDb ?? -32;
+  const volume = draft?.ambientVolumeDb ?? savedVolume;
+  const dirty = draft !== null && (!saved ||
+    JSON.stringify(selected) !== JSON.stringify(saved.selectedTrackIds) || volume !== savedVolume
+  );
   const active = productionBusy || !['IDLE', 'COMPLETED', 'FAILED', 'CANCELLED'].includes(state.status);
   const disabled = active || mutation.isPending;
   const saveDisabled = disabled || !dirty;
@@ -23,9 +28,16 @@ const ProjectMusicPanel = ({ state, productionBusy }: ProjectMusicPanelProps) =>
     ...snapshot, available: true,
   }));
   const tracks = [...snapshots, ...(library.data?.tracks ?? []).filter((track) => !snapshots.some((item) => item.id === track.id))];
-  const handleSelection = (ids: string[]) => setDraft({ ids, revision: draft?.revision ?? saved?.revision ?? 0 });
+  const handleSelection = (ids: string[]) => setDraft({
+    ids, revision: draft?.revision ?? saved?.revision ?? 0, ambientVolumeDb: volume,
+  });
+  const handleVolume = (event: ChangeEvent<HTMLInputElement>) => setDraft({
+    ids: selected, revision: draft?.revision ?? saved?.revision ?? 0,
+    ambientVolumeDb: Number(event.currentTarget.value),
+  });
   const handleSave = () => mutation.mutate({
-    kind: 'save', revision: draft?.revision ?? saved?.revision ?? 0, selectedTrackIds: selected,
+    kind: 'save', revision: draft?.revision ?? saved?.revision ?? 0,
+    selectedTrackIds: selected, ambientVolumeDb: volume,
   }, { onSuccess: () => setDraft(null) });
   const handleDiscard = () => setDraft(null);
   const handleRemaster = () => mutation.mutate({ kind: 'remaster' });
@@ -48,6 +60,26 @@ const ProjectMusicPanel = ({ state, productionBusy }: ProjectMusicPanelProps) =>
         Renaming or replacing library audio never substitutes a saved copy.</p>
       {library.isError && <p role="alert">Library could not load. Saved copies remain selected. <button onClick={handleRetry}>Retry</button></p>}
       <MusicSelector tracks={tracks} selected={selected} onChange={handleSelection} disabled={disabled} />
+      <div className="space-y-2">
+        <label htmlFor="ambient-volume" className="block text-sm font-medium">
+          Background music volume: {volume} dB
+        </label>
+        <input
+          id="ambient-volume"
+          aria-describedby="ambient-volume-help"
+          type="range"
+          min="-60"
+          max="0"
+          step="1"
+          value={volume}
+          onChange={handleVolume}
+          disabled={disabled}
+          className="w-full accent-primary"
+        />
+        <p id="ambient-volume-help" className="text-sm text-muted-foreground">
+          Adjust the soundtrack level relative to the narration, then save and rebuild the mix. The narration is unchanged.
+        </p>
+      </div>
       {dirty && <p role="status">Unsaved soundtrack changes. Refetching does not overwrite your choices.</p>}
       {active && <p>Production is queued or active. Wait for it to finish before saving music or rebuilding.</p>}
       {state.mixNeedsRebuild && <p role="status">Soundtrack saved — mix needs a rebuild. Narration will not be regenerated.</p>}

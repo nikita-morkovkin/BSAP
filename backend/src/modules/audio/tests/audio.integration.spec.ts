@@ -195,6 +195,7 @@ import type { AudioJob } from '../types';
         'chapters/ch_02_master.wav',
         'output/voice_raw_full.wav',
         'output/ambient_cycle.wav',
+        'output/background_music.wav',
         'output/master_final.wav',
         'output/master_final.flac',
       ]) {
@@ -229,6 +230,14 @@ import type { AudioJob } from '../types';
       expect(probe.stdout).toBe('pcm_s16le,44100,2');
       expect(await engine.getDurationSeconds(wav)).toBeCloseTo(24.4, 2);
       expect(await engine.getDurationSeconds(flac)).toBeCloseTo(24.4, 2);
+      expect(
+        await engine.getDurationSeconds(
+          stateManager.getArtifactPath(
+            projectId,
+            'output/background_music.wav',
+          ),
+        ),
+      ).toBeCloseTo(24.4, 2);
 
       const timestamps = await fs.readFile(
         stateManager.getArtifactPath(
@@ -313,6 +322,9 @@ import type { AudioJob } from '../types';
       expect(recovered.status).toBe('COMPLETED');
       expect(recovered.error).toBeUndefined();
       expect(recovered.outputFiles.flac).toBe('output/master_final.flac');
+      expect(recovered.outputFiles.backgroundMusic).toBe(
+        'output/background_music.wav',
+      );
     }, 180000);
   },
 );

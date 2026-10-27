@@ -23,4 +23,9 @@ export const getTimestamps = async (id: string, signal?: AbortSignal): Promise<s
   return data;
 };
 
-export const mediaApi = { downloadMediaUrl, downloadChapterUrl, chunkAudioUrl, getTimestamps };
+export const mediaApi = {
+  downloadMediaUrl,
+  downloadChapterUrl,
+  chunkAudioUrl,
+  getTimestamps,
+};

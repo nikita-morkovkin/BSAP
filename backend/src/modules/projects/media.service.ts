@@ -96,8 +96,18 @@ export class MediaService {
     artifact: MediaArtifact,
   ): Promise<StreamableFile> {
     const state = await this.projectsService.getState(projectId);
-    const path = state.outputFiles[artifact];
+    // Completed legacy masters already contain this assembled, unmixed source.
+    const path =
+      state.outputFiles[artifact] ??
+      (artifact === 'narration' && state.outputFiles.wav
+        ? 'output/voice_raw_full.wav'
+        : undefined);
     const files = {
+      narration: { filename: 'voiceover_only.wav', type: 'audio/wav' },
+      backgroundMusic: {
+        filename: 'background_music_only.wav',
+        type: 'audio/wav',
+      },
       wav: { filename: 'master_final.wav', type: 'audio/wav' },
       flac: { filename: 'master_final.flac', type: 'audio/flac' },
       timestamps: {

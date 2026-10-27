@@ -106,6 +106,13 @@ export class ProjectMusicService {
     return this.idle(projectId, async () => {
       const state = await this.read(projectId);
       const revision = state.music?.revision ?? 0;
+      const ambientVolumeDb =
+        payload.ambientVolumeDb ??
+        state.profile.masteringConfig.ambientVolumeDb;
+      const selectionUnchanged =
+        state.music &&
+        JSON.stringify(state.music.selectedTrackIds) ===
+          JSON.stringify(payload.selectedTrackIds);
 
       if (revision !== payload.revision) {
         throw new ConflictException(
@@ -114,20 +121,21 @@ export class ProjectMusicService {
       }
 
       if (
-        state.music &&
-        JSON.stringify(state.music.selectedTrackIds) ===
-          JSON.stringify(payload.selectedTrackIds)
+        selectionUnchanged &&
+        ambientVolumeDb === state.profile.masteringConfig.ambientVolumeDb
       ) {
         return state;
       }
 
       const root = this.manager.getProjectDirectory(projectId);
-      const music = await this.library.snapshot(
-        root,
-        payload.selectedTrackIds,
-        revision + 1,
-        state.music,
-      );
+      const music = selectionUnchanged
+        ? { ...state.music!, revision: revision + 1 }
+        : await this.library.snapshot(
+            root,
+            payload.selectedTrackIds,
+            revision + 1,
+            state.music,
+          );
 
       try {
         const updated = await this.manager.updateState(projectId, (current) => {
@@ -138,7 +146,12 @@ export class ProjectMusicService {
           }
 
           current.music = music;
-          current.outputFiles = {};
+          current.profile.masteringConfig.ambientVolumeDb = ambientVolumeDb;
+          const narration =
+            current.outputFiles.narration ??
+            (current.outputFiles.wav ? 'output/voice_raw_full.wav' : undefined);
+
+          current.outputFiles = narration ? { narration } : {};
           current.mixNeedsRebuild = true;
 
           delete current.mixRevision;
@@ -152,6 +165,7 @@ export class ProjectMusicService {
         await Promise.all(
           [
             'ambient_cycle.wav',
+            'background_music.wav',
             'master_final.wav',
             'master_final.flac',
             'music_manifest.json',

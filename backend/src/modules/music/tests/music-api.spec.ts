@@ -300,6 +300,53 @@ describe('Music REST and project lifecycle', () => {
     );
   });
 
+  it('saves a new music level without replacing saved snapshots or assembled narration', async () => {
+    const initial = await app.get(ProjectMusicService).initialize(id, []);
+    const voiceoverPath = manager.getArtifactPath(
+      id,
+      'output/voice_raw_full.wav',
+    );
+
+    await fs.writeFile(voiceoverPath, 'assembled narration');
+    await manager.updateState(id, (current) => {
+      current.outputFiles = {
+        narration: 'output/voice_raw_full.wav',
+        wav: 'output/master_final.wav',
+      };
+    });
+
+    const response = await request(app.getHttpServer())
+      .put(`/api/projects/${id}/music`)
+      .send({
+        revision: initial.music!.revision,
+        selectedTrackIds: [],
+        ambientVolumeDb: -18,
+      })
+      .expect(200);
+    const saved = stateSchema.parse(response.body);
+
+    expect(saved.music).toMatchObject({
+      revision: 1,
+      selectedTrackIds: [],
+      snapshots: [],
+    });
+    expect(saved.profile.masteringConfig.ambientVolumeDb).toBe(-18);
+    expect(saved.mixNeedsRebuild).toBe(true);
+    expect(saved.outputFiles).toEqual({
+      narration: 'output/voice_raw_full.wav',
+    });
+    expect(await fs.readFile(voiceoverPath, 'utf8')).toBe(
+      'assembled narration',
+    );
+  });
+
+  it('rejects music levels outside the supported range', async () => {
+    await request(app.getHttpServer())
+      .put(`/api/projects/${id}/music`)
+      .send({ revision: 0, selectedTrackIds: [], ambientVolumeDb: 1 })
+      .expect(400);
+  });
+
   it('rejects queued and active production conflicts before snapshot creation', async () => {
     queued.push({ data: { projectId: id } });
 

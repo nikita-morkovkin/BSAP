@@ -46,6 +46,7 @@ export const musicApi = {
 
     return (await axiosInstance.put<ProjectState>(`${path}/music`, {
       revision: action.revision, selectedTrackIds: action.selectedTrackIds,
+      ambientVolumeDb: action.ambientVolumeDb,
     })).data;
   },
 };

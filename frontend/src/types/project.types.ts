@@ -4,7 +4,7 @@ export type ReasoningEffort = string;
 export type PipelineStatus = 'IDLE' | 'IN_PROGRESS' | 'GENERATING_OUTLINE'
   | 'GENERATING_SCRIPTS' | 'SYNTHESIZING_AUDIO' | 'MASTERING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 export type WorkStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-export type MediaArtifact = 'wav' | 'flac' | 'timestamps' | 'markers';
+export type MediaArtifact = 'wav' | 'flac' | 'timestamps' | 'markers' | 'narration' | 'backgroundMusic';
 
 export type Profile = {
   architectModel: string;

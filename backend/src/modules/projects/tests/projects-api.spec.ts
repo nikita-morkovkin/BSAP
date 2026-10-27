@@ -321,6 +321,8 @@ describe('Projects REST API', () => {
           ],
         };
         current.outputFiles = {
+          narration: 'output/voice_raw_full.wav',
+          backgroundMusic: 'output/background_music.wav',
           wav: 'output/master_final.wav',
           flac: 'output/master_final.flac',
           timestamps: 'output/youtube_timestamps.txt',
@@ -342,6 +344,8 @@ describe('Projects REST API', () => {
     });
 
     it.each([
+      ['narration', 'voiceover_only.wav', 'audio/wav'],
+      ['backgroundMusic', 'background_music_only.wav', 'audio/wav'],
       ['wav', 'master_final.wav', 'audio/wav'],
       ['flac', 'master_final.flac', 'audio/flac'],
       ['timestamps', 'youtube_timestamps.txt', 'text/plain'],
@@ -365,6 +369,16 @@ describe('Projects REST API', () => {
         ).toBe('fixture-content');
       },
     );
+
+    it('returns 404 when a full background music artifact is unavailable', async () => {
+      await manager.updateState(state.projectId, (current) => {
+        current.outputFiles.backgroundMusic = undefined;
+      });
+
+      await request(app.getHttpServer())
+        .get(`/api/projects/${state.projectId}/media/download/backgroundMusic`)
+        .expect(404);
+    });
 
     it('streams the chapter with the UI download filename', async () => {
       const response = await request(app.getHttpServer())

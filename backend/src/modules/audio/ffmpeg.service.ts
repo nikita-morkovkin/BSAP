@@ -212,6 +212,10 @@ export class FfmpegService {
       voice,
     );
 
+    await this.stateManagerService.updateState(projectId, (current) => {
+      current.outputFiles.narration = 'output/voice_raw_full.wav';
+    });
+
     const ambient = await this.buildAmbientBed(projectId);
     const duration = await this.getDurationSeconds(voice);
     const config = state.profile.masteringConfig;
@@ -219,6 +223,25 @@ export class FfmpegService {
       config.fadeOutSeconds,
       duration + config.paddingSeconds,
     );
+    const masterDuration = duration + config.paddingSeconds;
+
+    if (ambient) {
+      await this.render(artifact('output/background_music.wav'), [
+        '-stream_loop',
+        '-1',
+        '-i',
+        ambient,
+        '-af',
+        `volume=${config.ambientVolumeDb}dB,atrim=duration=${masterDuration},afade=t=out:st=${masterDuration - fadeDuration}:d=${fadeDuration}`,
+        '-ar',
+        '44100',
+        '-ac',
+        '2',
+        '-c:a',
+        'pcm_s16le',
+      ]);
+    }
+
     const filter = [
       `[0:a]highpass=f=${config.highpassHz},equalizer=f=${config.warmthFrequencyHz}:t=q:w=1.2:g=${config.warmthGainDb},deesser=i=${config.deesserIntensity}:m=0.5:f=0.5:s=o,lowpass=f=${config.lowpassHz},acompressor=threshold=${config.compressorThresholdDb}dB:ratio=${config.compressorRatio}:attack=20:release=250,loudnorm=I=${config.loudnessLufs}:TP=${config.truePeakDb}:LRA=${config.loudnessRange},apad=pad_dur=${config.paddingSeconds}[voice]`,
       ...(ambient ? [`[1:a]volume=${config.ambientVolumeDb}dB[ambient]`] : []),
@@ -261,6 +284,8 @@ export class FfmpegService {
       }
 
       current.outputFiles = {
+        narration: 'output/voice_raw_full.wav',
+        ...(ambient ? { backgroundMusic: 'output/background_music.wav' } : {}),
         wav: 'output/master_final.wav',
         flac: 'output/master_final.flac',
         timestamps: 'output/youtube_timestamps.txt',

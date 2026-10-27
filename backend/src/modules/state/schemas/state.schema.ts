@@ -36,6 +36,8 @@ export const stateSchema = z
         'Chapter record keys must match chapterNumber',
       ),
     outputFiles: z.strictObject({
+      narration: artifactPathSchema.optional(),
+      backgroundMusic: artifactPathSchema.optional(),
       wav: artifactPathSchema.optional(),
       flac: artifactPathSchema.optional(),
       timestamps: artifactPathSchema.optional(),

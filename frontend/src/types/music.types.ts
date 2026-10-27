@@ -30,5 +30,5 @@ export type MusicAction =
   | { kind: 'delete'; id: string };
 
 export type ProjectMusicAction =
-  | { kind: 'save'; revision: number; selectedTrackIds: string[] }
+  | { kind: 'save'; revision: number; selectedTrackIds: string[]; ambientVolumeDb?: number }
   | { kind: 'remaster' };

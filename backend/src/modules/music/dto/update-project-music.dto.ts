@@ -5,4 +5,5 @@ export class UpdateProjectMusicDto {
 
   public revision!: number;
   public selectedTrackIds!: string[];
+  public ambientVolumeDb?: number;
 }
