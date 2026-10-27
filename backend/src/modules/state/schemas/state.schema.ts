@@ -3,6 +3,7 @@ import { artifactPathSchema } from './artifact-path.schema';
 import { chapterSchema } from './chapter.schema';
 import { profileSchema } from './profile.schema';
 import { projectMusicSchema } from '../../music/schemas/project-music.schema';
+import { projectVideoSchema } from '../../video/schemas/project-video.schema';
 
 export const stateSchema = z
   .strictObject({
@@ -22,6 +23,7 @@ export const stateSchema = z
     ]),
     error: z.string().optional(),
     music: projectMusicSchema.optional(),
+    video: projectVideoSchema.optional(),
     mixRevision: z.number().int().nonnegative().optional(),
     mixNeedsRebuild: z.boolean().optional(),
     profile: profileSchema,

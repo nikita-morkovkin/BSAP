@@ -1,0 +1,16 @@
+export const videoControls = [
+  { key: 'brightness', min: -1, max: 1, step: 0.01 },
+  { key: 'contrast', min: 0.5, max: 1.5, step: 0.01 },
+  { key: 'saturation', min: 0, max: 1.5, step: 0.01 },
+  { key: 'gamma', min: 0.5, max: 1.5, step: 0.01 },
+  { key: 'crossfadeSec', min: 1.5, max: 5, step: 0.1 },
+  { key: 'minClipDurationSec', min: 8, max: 60, step: 1 },
+  { key: 'maxClipDurationSec', min: 0, max: 300, step: 1 },
+  { key: 'slowMoDefault', min: 1, max: 2, step: 0.05 },
+  { key: 'slowMoMax', min: 1, max: 2, step: 0.05 },
+  { key: 'cycleTargetMinutes', min: 0.25, max: 90, step: 0.25 },
+  { key: 'width', min: 160, max: 3840, step: 2 },
+  { key: 'height', min: 90, max: 2160, step: 2 },
+  { key: 'fps', min: 12, max: 60, step: 1 },
+  { key: 'seed', min: 0, max: 4294967295, step: 1 },
+] as const;

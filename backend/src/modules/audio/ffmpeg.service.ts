@@ -8,6 +8,7 @@ import { ProjectMusicService } from '../music/project-music.service';
 import { StateManagerService } from '../state/state-manager.service';
 import { MasterProjectQueueService } from './master-project-queue.service';
 import { MetadataExporterService } from './metadata-exporter.service';
+import type { MediaProcessOptions } from './types/media-process-options.type';
 
 @Injectable()
 export class FfmpegService {
@@ -115,14 +116,29 @@ export class FfmpegService {
     let duration = 0;
 
     for (const [index, path] of tracks.entries()) {
-      const length = Math.max(
-        (await this.getDurationSeconds(path)) / config.ambientSpeed,
-        fade * 2 + 1,
-      );
+      const rawDuration = await this.getDurationSeconds(path);
+      const speed = config.ambientSpeed > 0 ? config.ambientSpeed : 1;
+      const trackDuration = rawDuration / speed;
 
-      inputs.push('-stream_loop', '-1', '-i', path);
+      // Если трек короче чем 2 кроссфейда, уменьшаем безопасный кроссфейд,
+      // чтобы трек не накладывался сам на себя с эффектом эха
+      const minRequiredLength = fade * 2 + 1;
+      const needsLoop = trackDuration < minRequiredLength;
+      const length = Math.max(trackDuration, minRequiredLength);
+
+      if (needsLoop) {
+        inputs.push('-stream_loop', '-1', '-i', path);
+      } else {
+        inputs.push('-i', path);
+      }
+
+      const speedFilter =
+        Math.abs(speed - 1) > 0.001
+          ? `asetrate=44100*${speed},aresample=44100`
+          : `aresample=44100`;
+
       filters.push(
-        `[${index}:a]atempo=${config.ambientSpeed},aresample=44100,aformat=channel_layouts=stereo,atrim=duration=${length},asetpts=PTS-STARTPTS[a${index}]`,
+        `[${index}:a]aformat=sample_fmts=fltp:channel_layouts=stereo,${speedFilter},atrim=duration=${length},asetpts=PTS-STARTPTS[a${index}]`,
       );
 
       duration += length;
@@ -132,7 +148,7 @@ export class FfmpegService {
 
         filters.push(
           fade > 0
-            ? `[${previous}][a${index}]acrossfade=d=${fade}[mix${index}]`
+            ? `[${previous}][a${index}]acrossfade=d=${fade}:c1=tri:c2=tri[mix${index}]`
             : `[${previous}][a${index}]concat=n=2:v=0:a=1[mix${index}]`,
         );
 
@@ -142,14 +158,13 @@ export class FfmpegService {
 
     const mixed = tracks.length === 1 ? 'a0' : `mix${tracks.length - 1}`;
 
-    if (fade > 0) {
-      // Rotate the cycle so its tail/head overlap is inside the file, not at its loop boundary.
+    if (fade > 0 && duration > fade * 2) {
       filters.push(
         `[${mixed}]asplit=3[body][tail][head]`,
         `[body]atrim=start=${fade}:end=${duration - fade},asetpts=PTS-STARTPTS[middle]`,
         `[tail]atrim=start=${duration - fade},asetpts=PTS-STARTPTS[end]`,
         `[head]atrim=end=${fade},asetpts=PTS-STARTPTS[start]`,
-        `[end][start]acrossfade=d=${fade}[seam]`,
+        `[end][start]acrossfade=d=${fade}:c1=tri:c2=tri[seam]`,
         '[middle][seam]concat=n=2:v=0:a=1[out]',
       );
     } else {
@@ -160,6 +175,20 @@ export class FfmpegService {
       projectId,
       'output/ambient_cycle.wav',
     );
+
+    // await this.render(destination, [
+    //   ...inputs,
+    //   '-filter_complex',
+    //   filters.join(';'),
+    //   '-map',
+    //   '[out]',
+    //   '-ar',
+    //   '44100',
+    //   '-ac',
+    //   '2',
+    //   '-c:a',
+    //   'pcm_s16le',
+    // ]);
 
     await this.render(destination, [
       ...inputs,
@@ -172,7 +201,7 @@ export class FfmpegService {
       '-ac',
       '2',
       '-c:a',
-      'pcm_s16le',
+      'pcm_f32le', // <-- Вместо pcm_s16le! Сохраняет идеальную чистоту тихих звуков
     ]);
 
     return destination;
@@ -225,6 +254,23 @@ export class FfmpegService {
     );
     const masterDuration = duration + config.paddingSeconds;
 
+    // if (ambient) {
+    //   await this.render(artifact('output/background_music.wav'), [
+    //     '-stream_loop',
+    //     '-1',
+    //     '-i',
+    //     ambient,
+    //     '-af',
+    //     `volume=${config.ambientVolumeDb}dB,atrim=duration=${masterDuration},afade=t=out:st=${masterDuration - fadeDuration}:d=${fadeDuration}`,
+    //     '-ar',
+    //     '44100',
+    //     '-ac',
+    //     '2',
+    //     '-c:a',
+    //     'pcm_s16le',
+    //   ]);
+    // }
+
     if (ambient) {
       await this.render(artifact('output/background_music.wav'), [
         '-stream_loop',
@@ -238,14 +284,20 @@ export class FfmpegService {
         '-ac',
         '2',
         '-c:a',
-        'pcm_s16le',
+        'pcm_s24le', // <-- 24 бита вместо 16 бит, чтобы тихий фон не шипел
       ]);
     }
 
+    // const filter = [
+    //   `[0:a]highpass=f=${config.highpassHz},equalizer=f=${config.warmthFrequencyHz}:t=q:w=1.2:g=${config.warmthGainDb},deesser=i=${config.deesserIntensity}:m=0.5:f=0.5:s=o,lowpass=f=${config.lowpassHz},acompressor=threshold=${config.compressorThresholdDb}dB:ratio=${config.compressorRatio}:attack=20:release=250,loudnorm=I=${config.loudnessLufs}:TP=${config.truePeakDb}:LRA=${config.loudnessRange},apad=pad_dur=${config.paddingSeconds}[voice]`,
+    //   ...(ambient ? [`[1:a]volume=${config.ambientVolumeDb}dB[ambient]`] : []),
+    //   `${ambient ? '[voice][ambient]amix=inputs=2:duration=first:dropout_transition=0,' : '[voice]'}afade=t=out:st=${duration + config.paddingSeconds - fadeDuration}:d=${fadeDuration}[out]`,
+    // ].join(';');
+
     const filter = [
-      `[0:a]highpass=f=${config.highpassHz},equalizer=f=${config.warmthFrequencyHz}:t=q:w=1.2:g=${config.warmthGainDb},deesser=i=${config.deesserIntensity}:m=0.5:f=0.5:s=o,lowpass=f=${config.lowpassHz},acompressor=threshold=${config.compressorThresholdDb}dB:ratio=${config.compressorRatio}:attack=20:release=250,loudnorm=I=${config.loudnessLufs}:TP=${config.truePeakDb}:LRA=${config.loudnessRange},apad=pad_dur=${config.paddingSeconds}[voice]`,
+      `[0:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,highpass=f=${config.highpassHz},equalizer=f=${config.warmthFrequencyHz}:t=q:w=1.2:g=${config.warmthGainDb},deesser=i=${config.deesserIntensity}:m=0.5:f=0.5:s=o,lowpass=f=${config.lowpassHz},acompressor=threshold=${config.compressorThresholdDb}dB:ratio=${config.compressorRatio}:attack=20:release=250,loudnorm=I=${config.loudnessLufs}:TP=${config.truePeakDb}:LRA=${config.loudnessRange},apad=pad_dur=${config.paddingSeconds}[voice]`,
       ...(ambient ? [`[1:a]volume=${config.ambientVolumeDb}dB[ambient]`] : []),
-      `${ambient ? '[voice][ambient]amix=inputs=2:duration=first:dropout_transition=0,' : '[voice]'}afade=t=out:st=${duration + config.paddingSeconds - fadeDuration}:d=${fadeDuration}[out]`,
+      `${ambient ? '[voice][ambient]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,' : '[voice]'}alimiter=limit=${config.truePeakDb}dB:level=false,afade=t=out:st=${duration + config.paddingSeconds - fadeDuration}:d=${fadeDuration}[out]`,
     ].join(';');
 
     await this.render(artifact('output/master_final.wav'), [
@@ -263,6 +315,7 @@ export class FfmpegService {
       '-c:a',
       'pcm_s16le',
     ]);
+
     await this.render(artifact('output/master_final.flac'), [
       '-i',
       artifact('output/master_final.wav'),
@@ -271,11 +324,13 @@ export class FfmpegService {
       '-sample_fmt',
       's16',
     ]);
+
     await this.metadataExporterService.export(projectId);
     await writeArtifact(
       artifact('output/music_manifest.json'),
       JSON.stringify(state.music, null, 2),
     );
+
     await this.stateManagerService.updateState(projectId, (current) => {
       if (current.music?.revision !== selectionRevision) {
         throw new Error(
@@ -323,6 +378,115 @@ export class FfmpegService {
     }
 
     return duration;
+  }
+
+  public async getFinalAudioInfo(projectId: string) {
+    const state = await this.stateManagerService.getState(projectId);
+    const file = state.outputFiles.flac ?? state.outputFiles.wav;
+
+    if (!file || state.mixNeedsRebuild) {
+      return null;
+    }
+
+    const path = this.stateManagerService.getArtifactPath(projectId, file);
+    const duration = await this.getDurationSeconds(path);
+    const stat = await fs.stat(path);
+
+    return { path, duration, revision: `${stat.size}:${stat.mtimeMs}` };
+  }
+
+  public async probeMedia(path: string): Promise<unknown> {
+    const { execa } = await import('execa');
+    const result = await execa(
+      this.configService.get<string>('FFPROBE_PATH') ?? 'ffprobe',
+      ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', path],
+      { timeout: 30000, maxBuffer: 1024 * 1024 },
+    );
+
+    return JSON.parse(result.stdout);
+  }
+
+  public async renderMedia(
+    destination: string,
+    args: string[],
+    options: MediaProcessOptions = {},
+  ): Promise<string> {
+    const { execa } = await import('execa');
+    const temporary = `${destination}.${randomUUID()}.tmp${extname(destination)}`;
+
+    options.signal?.throwIfAborted();
+
+    await fs.mkdir(dirname(destination), { recursive: true });
+
+    const child = execa(
+      this.configService.get<string>('FFMPEG_PATH') ?? 'ffmpeg',
+      [
+        '-hide_banner',
+        '-loglevel',
+        'warning',
+        '-nostdin',
+        '-y',
+        '-filter_complex_threads',
+        '1',
+        '-progress',
+        'pipe:1',
+        ...args,
+        temporary,
+      ],
+      {
+        timeout: Number(
+          this.configService.get('VIDEO_FFMPEG_TIMEOUT_MS') ?? 7200000,
+        ),
+        maxBuffer: 1024 * 1024,
+        forceKillAfterDelay: 2000,
+      },
+    );
+    const cancel = () => {
+      child.kill('SIGTERM');
+    };
+    let pending = '';
+
+    options.signal?.addEventListener('abort', cancel, { once: true });
+
+    if (options.signal?.aborted) {
+      cancel();
+    }
+
+    child.stdout?.on('data', (data: Buffer) => {
+      pending += data.toString();
+
+      const lines = pending.split(/\r?\n/);
+
+      pending = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (line.startsWith('out_time_us=') && options.duration) {
+          options.onProgress?.(
+            Math.min(1, Number(line.slice(12)) / 1000000 / options.duration),
+          );
+        }
+      }
+    });
+
+    try {
+      const result = await child;
+
+      options.signal?.throwIfAborted();
+
+      await fs.rename(temporary, destination);
+
+      return result.stderr;
+    } catch (error) {
+      options.signal?.throwIfAborted();
+
+      throw new Error(
+        error instanceof Error ? error.message.slice(-8000) : 'FFmpeg failed',
+      );
+    } finally {
+      options.signal?.removeEventListener('abort', cancel);
+
+      await fs.rm(temporary, { force: true });
+    }
   }
 
   private async ensureSilence(

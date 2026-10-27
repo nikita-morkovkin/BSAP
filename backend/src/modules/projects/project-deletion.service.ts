@@ -27,6 +27,17 @@ export class ProjectDeletionService {
   }
 
   private async removeProject(projectId: string): Promise<void> {
+    const state = await this.stateManager.getState(projectId);
+
+    if (
+      state.video?.job &&
+      !['done', 'failed', 'cancelled'].includes(state.video.job.stage)
+    ) {
+      throw new ConflictException(
+        'Cancel the active video job before deleting this episode',
+      );
+    }
+
     // Pause dispatch, not active work; never remove files beneath a running worker.
     const paused: Queue[] = [];
     try {
@@ -56,7 +67,9 @@ export class ProjectDeletionService {
           'prioritized',
         ]);
         for (const job of jobs) {
-          if (job.data.projectId === projectId) await job.remove();
+          if (job.data.projectId === projectId) {
+            await job.remove();
+          }
         }
       }
       await this.stateManager.deleteProject(projectId);

@@ -1,0 +1,20 @@
+export type StockClipMeta = {
+  id: string;
+  sha256: string;
+  originalName: string;
+  filePath: string;
+  thumbPath: string;
+  durationSec: number;
+  fps: number;
+  width: number;
+  height: number;
+  codec: string;
+  sizeBytes: number;
+  hasVideoStream: boolean;
+  status: 'uploaded' | 'ready' | 'invalid';
+  invalidReason?: string;
+  enabled: boolean;
+  vfr: boolean;
+  plannedDurationSec?: number;
+  normalizedDurations: Record<string, number>;
+};

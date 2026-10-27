@@ -8,6 +8,7 @@ import { ProjectsModule } from '../../modules/projects/projects.module';
 import { StateModule } from '../../modules/state/state.module';
 import { TextModule } from '../../modules/text/text.module';
 import { TtsModule } from '../../modules/tts/tts.module';
+import { VideoModule } from '../../modules/video/video.module';
 import { HealthController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -31,6 +32,7 @@ import { AppService } from './app.service';
     TtsModule,
     AudioModule,
     ProjectsModule,
+    VideoModule,
   ],
   controllers: [HealthController],
   providers: [AppService],
