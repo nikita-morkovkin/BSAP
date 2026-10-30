@@ -1,7 +1,5 @@
-import { apiClient } from "@/api/apiClient";
 import QueryFeedback from "@/components/common/QueryFeedback";
-import { useProject } from "@/hooks/queries/useProject.hook";
-import { sortedChapters } from "@/utils/project.util";
+import { useDownloadsPanel } from "./hooks/useDownloadsPanel.hook";
 import ChapterDownload from "./ChapterDownload";
 import DownloadLink from "./DownloadLink";
 import TimestampsBox from "./TimestampsBox";
@@ -9,12 +7,9 @@ import TimestampsBox from "./TimestampsBox";
 type DownloadsPanelProps = { projectId: string };
 
 const DownloadsPanel = ({ projectId }: DownloadsPanelProps) => {
-  const query = useProject({ id: projectId });
-  const handleRetry = () => {
-    query.refetch();
-  };
+  const { query, handleRetry, data } = useDownloadsPanel({ projectId });
 
-  if (!query.data) {
+  if (!data) {
     return (
       <QueryFeedback
         error={query.isError}
@@ -24,23 +19,23 @@ const DownloadsPanel = ({ projectId }: DownloadsPanelProps) => {
     );
   }
 
-  const { state } = query.data;
-  const projectTitle = state.title ?? state.topic;
-  const chapters = sortedChapters(state.chapters);
-  const flacUrl = apiClient.media.downloadMediaUrl(projectId, "flac");
-  const wavUrl = apiClient.media.downloadMediaUrl(projectId, "wav");
-  const narrationUrl = apiClient.media.downloadMediaUrl(projectId, "narration");
-  const hasNarration = Boolean(state.outputFiles.narration || state.outputFiles.wav);
-  const backgroundMusicUrl = apiClient.media.downloadMediaUrl(projectId, "backgroundMusic");
-  const timestampsUrl = apiClient.media.downloadMediaUrl(
-    projectId,
-    "timestamps",
-  );
-  const markersUrl = apiClient.media.downloadMediaUrl(projectId, "markers");
-  const hasFlac = Boolean(state.outputFiles.flac);
-  const hasWav = Boolean(state.outputFiles.wav);
-  const hasTimestamps = Boolean(state.outputFiles.timestamps);
-  const hasMarkers = Boolean(state.outputFiles.markers);
+  const {
+    state,
+    projectTitle,
+    chapters,
+    flacUrl,
+    wavUrl,
+    narrationUrl,
+    hasNarration,
+    backgroundMusicUrl,
+    timestampsUrl,
+    markersUrl,
+    hasFlac,
+    hasWav,
+    hasTimestamps,
+    hasMarkers,
+    hasBackgroundMusic,
+  } = data;
 
   return (
     <section className="space-y-6">
@@ -93,33 +88,22 @@ const DownloadsPanel = ({ projectId }: DownloadsPanelProps) => {
             label="Download NLE Timeline Markers (.CSV)"
             available={hasMarkers}
           />
+          <DownloadLink
+            url={backgroundMusicUrl}
+            label="Download Background Music Only (.WAV)"
+            available={hasBackgroundMusic}
+          />
         </div>
         <p className="text-sm text-muted-foreground">
-          Voiceover only contains the assembled narration with chapter and chunk pauses,
-          without background music or the final mastering chain, padding, and fade-out.
-          Music-level changes do not alter this source.
+          Voiceover only contains the assembled narration with chapter and chunk
+          pauses, without background music or the final mastering chain,
+          padding, and fade-out. Music-level changes do not alter this source.
         </p>
         <TimestampsBox
           projectId={projectId}
           revision={state.updatedAt}
           available={hasTimestamps}
         />
-      </div>
-      <div className="space-y-4 rounded-2xl border bg-card p-6">
-        <h2 className="text-xl font-semibold">Background music</h2>
-        <p className="text-sm text-muted-foreground">
-          Download the complete rendered background music track without narration. It uses the saved soundtrack, speed, volume, and fade settings for the full production length.
-        </p>
-        <DownloadLink
-          url={backgroundMusicUrl}
-          label="Download Background Music Only (.WAV)"
-          available={Boolean(state.outputFiles.backgroundMusic)}
-        />
-        {!state.outputFiles.backgroundMusic && (
-          <p className="text-sm text-muted-foreground">
-            The full background track becomes available after mastering a project with selected music.
-          </p>
-        )}
       </div>
       <h2 className="text-xl font-semibold">Individual chapters</h2>
       <ul className="space-y-3">

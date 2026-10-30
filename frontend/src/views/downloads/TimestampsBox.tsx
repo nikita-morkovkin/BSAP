@@ -15,6 +15,7 @@ const TimestampsBox = ({
   available,
 }: TimestampsBoxProps) => {
   const query = useTimestamps({ id: projectId, revision, enabled: available });
+
   const text = query.data ?? "";
   const disabled = !text;
 
@@ -28,6 +29,7 @@ const TimestampsBox = ({
       );
     }
   };
+
   const handleRetry = () => {
     query.refetch();
   };

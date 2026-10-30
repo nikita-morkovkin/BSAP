@@ -4,6 +4,7 @@ import MusicUploadForm from "./MusicUploadForm";
 
 const MusicLibraryView = () => {
   const query = useMusic();
+
   const handleRetry = () => {
     query.refetch();
   };
@@ -12,9 +13,9 @@ const MusicLibraryView = () => {
     <section className="space-y-6">
       <h1 className="text-3xl font-semibold">Music Library</h1>
       <p>
-        Reusable WAV and MP3 sources. Replacing, renaming, or deleting a library entry
-        never changes existing project copies. New uploads are not automatically
-        selected in saved projects or your unsaved form.
+        Reusable WAV and MP3 sources. Replacing, renaming, or deleting a library
+        entry never changes existing project copies. New uploads are not
+        automatically selected in saved projects or your unsaved form.
       </p>
       <MusicUploadForm />
       {query.isPending && <p role="status">Loading music…</p>}
