@@ -11,8 +11,15 @@ export class StateManagerService {
 
   private readonly operations = new Map<string, Promise<void>>();
 
-  public async initProject(topic: string, profile: Profile): Promise<State> {
+  public async initProject(
+    topic: string,
+    profile: Profile,
+    title?: string,
+  ): Promise<State> {
     const validatedTopic = stateSchema.shape.topic.parse(topic);
+    const validatedTitle = title
+      ? stateSchema.shape.title.unwrap().parse(title)
+      : undefined;
     const validatedProfile = profileSchema.parse(profile);
     const root = this.getProjectsDirectory();
 
@@ -29,7 +36,7 @@ export class StateManagerService {
         }, 0) + 1;
 
       const slug =
-        validatedTopic
+        (validatedTitle ?? validatedTopic)
           .normalize('NFKD')
           .replace(/[\u0300-\u036f]/g, '')
           .toLowerCase()
@@ -65,6 +72,7 @@ export class StateManagerService {
       const state = stateSchema.parse({
         projectId,
         topic: validatedTopic,
+        ...(validatedTitle ? { title: validatedTitle } : {}),
         createdAt: now,
         updatedAt: now,
         status: 'IDLE',

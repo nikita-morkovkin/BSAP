@@ -4,7 +4,8 @@ import { createProjectSchema } from '../schemas/create-project.schema';
 export class CreateProjectDto {
   public static readonly schema = createProjectSchema;
 
-  public topic!: string;
+  public title!: string;
+  public description!: string;
   public profile!: Profile;
   public selectedTrackIds?: string[];
 }

@@ -1,9 +1,11 @@
 import CatalogSelect from "@/components/common/CatalogSelect";
+import MusicSelector from "@/components/music/MusicSelector";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Slider } from "@/components/ui/Slider";
 import { useModels, useVoices } from "@/hooks/queries/useSettings.hook";
 import { useProjectForm } from "@/hooks/useProjectForm.hook";
+import type { MusicTrack } from "@/types/music.types";
 import type { Profile } from "@/types/project.types";
 import { getModelEffort } from "@/utils/settings.util";
 import { Sparkles } from "lucide-react";
@@ -11,8 +13,6 @@ import type { SubmitEvent } from "react";
 import ProfileTextField from "./ProfileTextField";
 import PromptStudio from "./PromptStudio";
 import ReasoningSelect from "./ReasoningSelect";
-import MusicSelector from '@/components/music/MusicSelector';
-import type { MusicTrack } from '@/types/music.types';
 
 type ProjectFormProps = { defaults: Profile; tracks: MusicTrack[] };
 
@@ -25,15 +25,19 @@ const ProjectForm = ({ defaults, tracks }: ProjectFormProps) => {
   const architect = models.data?.find(
     (model) => model.id === profile.architectModel,
   );
+
   const writer = models.data?.find((model) => model.id === profile.writerModel);
+
   const architectEffort = getModelEffort(
     architect,
     profile.architectReasoningEffort,
   );
+
   const writerEffort = getModelEffort(writer, profile.writerReasoningEffort);
   const validVoice = voices.data?.some(
     (voice) => voice.id === profile.ttsVoice,
   );
+
   const ready =
     !!architect && !!writer && validVoice && !models.isError && !voices.isError;
   const speedLabel = `Narration speed · ${profile.ttsSpeed.toFixed(2)}×`;
@@ -60,15 +64,58 @@ const ProjectForm = ({ defaults, tracks }: ProjectFormProps) => {
       >
         <legend className="sr-only">Episode settings</legend>
         <label className="grid gap-2 font-medium">
-          What shall we explore tonight?
+          Title
           <Input
-            name="topic"
-            value={form.topic}
-            onChange={form.handleTopic}
-            placeholder="A gentle journey through the hidden life of the ocean"
-            required
-            maxLength={2000}
+            name="title"
+            value={form.title}
+            onChange={form.handleTitle}
+            placeholder="The Hidden Life of the Ocean"
+            aria-describedby="episode-title-limit"
           />
+          <span
+            id="episode-title-limit"
+            className="text-xs text-muted-foreground"
+          >
+            {form.title.length}/100 characters
+          </span>
+          {form.title.trim().length === 0 && (
+            <span className="text-xs text-destructive">
+              Enter an episode title.
+            </span>
+          )}
+          {form.title.trim().length > 100 && (
+            <span className="text-xs text-destructive">
+              Title must be 100 characters or fewer.
+            </span>
+          )}
+        </label>
+        <label className="grid gap-2 font-medium">
+          Description
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={form.handleDescription}
+            placeholder="A gentle journey through the hidden life of the ocean…"
+            aria-describedby="episode-description-limit"
+            rows={5}
+            className="w-full min-w-0 resize-y rounded-xl border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
+          />
+          <span
+            id="episode-description-limit"
+            className="text-xs text-muted-foreground"
+          >
+            {form.description.length}/2,000 characters
+          </span>
+          {form.description.trim().length === 0 && (
+            <span className="text-xs text-destructive">
+              Enter an episode description.
+            </span>
+          )}
+          {form.description.trim().length > 2000 && (
+            <span className="text-xs text-destructive">
+              Description must be 2,000 characters or fewer.
+            </span>
+          )}
         </label>
         <div className="grid gap-5 sm:grid-cols-2">
           {(["architect", "writer"] as const).map((role) => (
@@ -166,8 +213,16 @@ const ProjectForm = ({ defaults, tracks }: ProjectFormProps) => {
           />
         </div>
         <PromptStudio profile={profile} onChange={form.handleProfile} />
-        <MusicSelector tracks={tracks} selected={form.selectedTrackIds} onChange={form.setSelectedTrackIds} />
-        <Button type="submit" size="lg" disabled={form.isPending || !ready}>
+        <MusicSelector
+          tracks={tracks}
+          selected={form.selectedTrackIds}
+          onChange={form.setSelectedTrackIds}
+        />
+        <Button
+          type="submit"
+          size="lg"
+          disabled={form.isPending || !ready || !form.canSubmit}
+        >
           <Sparkles />
           {submitLabel}
         </Button>

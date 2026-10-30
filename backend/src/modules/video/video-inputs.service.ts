@@ -25,22 +25,4 @@ export class VideoInputsService {
       assignments: video?.effectAssignments,
     });
   }
-
-  public async greeting(projectId: string): Promise<string> {
-    const video = (await this.state.getState(projectId)).video;
-    const clips = (await this.library.list(projectId, 'character'))
-      .map((clip) => ({ hash: clip.sha256, role: clip.role }))
-      .sort((a, b) => a.hash.localeCompare(b.hash));
-
-    return videoHash({
-      config: video?.greeting,
-      audio: video?.greetingAudio,
-      external:
-        video?.greeting?.lipSyncMode === 'external_lipsync'
-          ? video.externalGreeting
-          : undefined,
-      style: video?.style,
-      clips,
-    });
-  }
 }

@@ -25,8 +25,6 @@ const ExportRow = ({
     duration,
     error,
     building,
-    includeGreeting,
-    greeting,
     changeFormat,
     changeDuration,
     build,
@@ -79,16 +77,6 @@ const ExportRow = ({
               placeholder="04:30:00"
               className="block rounded border p-1"
             />
-          </label>
-        )}
-        {artifact.kind === "video_full" && (
-          <label className="block text-xs">
-            <input
-              type="checkbox"
-              checked={includeGreeting}
-              onChange={greeting}
-            />{" "}
-            Include configured mascot greeting
           </label>
         )}
         {error && (

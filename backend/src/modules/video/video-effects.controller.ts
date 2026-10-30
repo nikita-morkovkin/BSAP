@@ -105,14 +105,7 @@ export class VideoEffectsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(effectPresetSchema)) preset: EffectPreset,
   ) {
-    return this.jobs.start(
-      id,
-      'effect_preset',
-      undefined,
-      undefined,
-      undefined,
-      preset,
-    );
+    return this.jobs.start(id, 'effect_preset', undefined, undefined, preset);
   }
 
   @Delete('effects/:effectId')
@@ -146,6 +139,7 @@ export class VideoEffectsController {
         }
       }
     });
+
     await fs.rm(this.library.path(id, `effects/${effectId}`), {
       recursive: true,
       force: true,

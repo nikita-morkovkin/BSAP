@@ -9,6 +9,7 @@ export const stateSchema = z
   .strictObject({
     projectId: z.string().regex(/^\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/),
     topic: z.string().trim().min(1),
+    title: z.string().trim().min(1).max(100).optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     status: z.enum([

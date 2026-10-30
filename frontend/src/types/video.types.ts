@@ -18,7 +18,7 @@ export type StockClip = {
 
 export type VideoJob = {
   jobId: string; projectId: string;
-  kind: 'build' | 'preview' | 'mux' | 'video_full' | 'greeting_audio' | 'greeting_preview' | 'effect_preset' | 'greeting_lipsync';
+  kind: 'build' | 'preview' | 'mux' | 'video_full' | 'effect_preset';
   stage: 'queued' | 'normalizing' | 'planning' | 'rendering_chunks' | 'stitching' | 'muxing' | 'done' | 'failed' | 'cancelled';
   progress: number; stageProgress: number; message?: string; error?: string;
   outputPath?: string; startedAt: string; updatedAt: string;

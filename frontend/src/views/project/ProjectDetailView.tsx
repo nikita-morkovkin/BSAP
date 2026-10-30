@@ -17,12 +17,13 @@ const ProjectDetailView = ({ projectId }: ProjectDetailViewProps) => {
   }
 
   const { state, outline } = query.data;
+  const projectTitle = state.title ?? state.topic;
 
   return (
     <section className="space-y-6">
       <header>
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Live pipeline monitor</p>
-        <h1 className="text-3xl font-semibold tracking-tight">{state.topic}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{projectTitle}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{state.projectId}</p>
       </header>
       {query.isError && <QueryFeedback error message="Connection interrupted. Showing the last saved state." onRetry={handleRetry} />}

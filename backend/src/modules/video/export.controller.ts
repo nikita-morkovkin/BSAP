@@ -121,7 +121,6 @@ export class ExportController {
       kind === 'video_full' ? 'video_full' : 'mux',
       undefined,
       body.durationSec,
-      body.includeGreeting,
     );
   }
 }

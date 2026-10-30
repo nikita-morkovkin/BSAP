@@ -44,9 +44,7 @@ export class VideoJobService implements OnModuleInit {
     kind: VideoTask['kind'],
     style?: VideoStyleConfig,
     durationSec?: number,
-    includeGreeting?: boolean,
     preset?: VideoTask['preset'],
-    confirm?: boolean,
   ): Promise<VideoJobState> {
     const previous = (await this.state.getState(projectId)).video?.job;
 
@@ -93,9 +91,7 @@ export class VideoJobService implements OnModuleInit {
           kind,
           style: selected,
           durationSec,
-          includeGreeting,
           preset,
-          confirm,
         },
         { jobId, removeOnComplete: 100, removeOnFail: 100 },
       );

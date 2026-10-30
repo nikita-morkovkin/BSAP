@@ -13,7 +13,6 @@ export type StockClipMeta = {
   hasVideoStream: boolean;
   hasAudio?: boolean;
   hasAlpha?: boolean;
-  role?: 'idle' | 'talk' | 'greeting_source';
   status: 'uploaded' | 'ready' | 'invalid';
   invalidReason?: string;
   enabled: boolean;

@@ -43,7 +43,6 @@ describe('Export registry and streaming API', () => {
           provide: VideoInputsService,
           useValue: {
             cycle: () => Promise.resolve('inputs'),
-            greeting: () => Promise.resolve('greeting-inputs'),
           },
         },
         {
@@ -201,7 +200,7 @@ describe('Export registry and streaming API', () => {
       .expect(400);
   });
 
-  it('invalidates final mux provenance, character renders and greeting-bearing full exports independently', async () => {
+  it('invalidates final mux provenance independently from full video exports', async () => {
     await fs.writeFile(
       state.getArtifactPath(id, 'output/master_final.flac'),
       Buffer.alloc(10),
@@ -216,13 +215,10 @@ describe('Export registry and streaming API', () => {
       current.video!.output = 'video/cycle/test.mp4';
       current.video!.outputHash = `${stat.size}:${stat.mtimeMs}`;
       current.video!.outputCycleHash = 'plan';
-      current.video!.greetingClip = 'video/cycle/test.mp4';
-      current.video!.greetingClipInputHash = 'old-greeting';
       current.video!.full = {
         path: 'video/cycle/test.mp4',
         cycleHash: 'plan',
         durationSec: 20,
-        greetingHash: 'old-greeting',
       };
     });
 
@@ -233,13 +229,9 @@ describe('Export registry and streaming API', () => {
         ?.stale,
     ).toBe(false);
     expect(
-      (await registry.list(id)).find((item) => item.kind === 'greeting_clip')
-        ?.stale,
-    ).toBe(true);
-    expect(
       (await registry.list(id)).find((item) => item.kind === 'video_full')
         ?.stale,
-    ).toBe(true);
+    ).toBe(false);
 
     await state.updateState(id, (current) => {
       current.video!.outputCycleHash = 'old-plan';

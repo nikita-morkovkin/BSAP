@@ -25,6 +25,7 @@ const DownloadsPanel = ({ projectId }: DownloadsPanelProps) => {
   }
 
   const { state } = query.data;
+  const projectTitle = state.title ?? state.topic;
   const chapters = sortedChapters(state.chapters);
   const flacUrl = apiClient.media.downloadMediaUrl(projectId, "flac");
   const wavUrl = apiClient.media.downloadMediaUrl(projectId, "wav");
@@ -50,7 +51,7 @@ const DownloadsPanel = ({ projectId }: DownloadsPanelProps) => {
         <h1 className="text-3xl font-semibold tracking-tight">
           Ready for a quieter world.
         </h1>
-        <p className="mt-3 text-muted-foreground">{state.topic}</p>
+        <p className="mt-3 text-muted-foreground">{projectTitle}</p>
       </header>
       {query.isError && (
         <QueryFeedback

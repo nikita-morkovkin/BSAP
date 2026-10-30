@@ -13,11 +13,9 @@ export const exportsApi = {
     id: string,
     kind: string,
     durationSec?: number,
-    includeGreeting?: boolean,
   ): Promise<void> => {
     await axiosInstance.post(`${exportsApi.root(id)}/${kind}/build`, {
       durationSec,
-      includeGreeting,
     });
   },
 };

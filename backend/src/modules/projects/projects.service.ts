@@ -9,6 +9,7 @@ import { MasterProjectQueueService } from '../audio/master-project-queue.service
 import { PromptService } from '../llm/prompt.service';
 import { ScriptGeneratorService } from '../llm/script-generator.service';
 import { ScriptQueueService } from '../llm/script-queue.service';
+import { ProjectMusicService } from '../music/project-music.service';
 import { outlineSchema, profileSchema } from '../state/schemas';
 import { StateManagerService } from '../state/state-manager.service';
 import type { Outline, Profile, State } from '../state/types';
@@ -18,7 +19,6 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { RegenerateChunkDto } from './dto/regenerate-chunk.dto';
 import { ProjectDeletionService } from './project-deletion.service';
 import type { ProjectSummary } from './types/project-summary.type';
-import { ProjectMusicService } from '../music/project-music.service';
 
 @Injectable()
 export class ProjectsService {
@@ -49,9 +49,10 @@ export class ProjectsService {
     const projects = await this.stateManagerService.listProjects();
 
     return projects.map(
-      ({ projectId, topic, createdAt, updatedAt, status, error }) => ({
+      ({ projectId, topic, title, createdAt, updatedAt, status, error }) => ({
         projectId,
         topic,
+        title: title ?? topic,
         createdAt,
         updatedAt,
         status,
@@ -82,8 +83,9 @@ export class ProjectsService {
 
   public async createProject(payload: CreateProjectDto): Promise<State> {
     const state = await this.stateManagerService.initProject(
-      payload.topic,
+      payload.description,
       payload.profile,
+      payload.title,
     );
 
     let initialized: State;
@@ -132,9 +134,11 @@ export class ProjectsService {
     }
   }
 
-  public async getProject(
-    projectId: string,
-  ): Promise<{ state: State; outline: Outline | null; productionBusy: boolean }> {
+  public async getProject(projectId: string): Promise<{
+    state: State;
+    outline: Outline | null;
+    productionBusy: boolean;
+  }> {
     const state = await this.getState(projectId);
     const path = this.stateManagerService.getArtifactPath(
       projectId,

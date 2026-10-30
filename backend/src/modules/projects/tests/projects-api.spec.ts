@@ -196,18 +196,47 @@ describe('Projects REST API', () => {
   it('validates creation payloads and enqueues the outline pipeline', async () => {
     await request(app.getHttpServer())
       .post('/api/projects')
-      .send({ topic: 'Ocean', profile: { ...profile, ttsSpeed: 0 } })
+      .send({ title: 'Ocean', description: 'A deep journey', profile: { ...profile, ttsSpeed: 0 } })
       .expect(400);
     await request(app.getHttpServer())
       .post('/api/projects')
-      .send({ topic: 'Ocean', profile, extra: true })
+      .send({ title: 'Ocean', description: 'A deep journey', profile, extra: true })
       .expect(400);
     await request(app.getHttpServer())
       .post('/api/projects')
-      .send({ topic: 'Ocean', profile })
+      .send({ title: '  Hidden Ocean  ', description: '  A gentle journey into ocean life.  ', profile })
       .expect(201);
 
-    expect(scripts.enqueueProject).toHaveBeenCalledWith('002-ocean');
+    expect(scripts.enqueueProject).toHaveBeenCalledWith('002-hidden-ocean');
+    const created = await manager.getState('002-hidden-ocean');
+
+    expect(created.title).toBe('Hidden Ocean');
+    expect(created.topic).toBe('A gentle journey into ocean life.');
+  });
+
+  it('rejects missing, whitespace-only, and over-limit title or description values', async () => {
+    const validPayload = {
+      title: 'Ocean',
+      description: 'A gentle ocean journey',
+      profile,
+    };
+
+    await request(app.getHttpServer())
+      .post('/api/projects')
+      .send({ ...validPayload, title: '   ' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/projects')
+      .send({ ...validPayload, description: '  \n ' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/projects')
+      .send({ ...validPayload, title: 'T'.repeat(101) })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/projects')
+      .send({ ...validPayload, description: 'D'.repeat(2001) })
+      .expect(400);
   });
 
   it('lists summaries newest first and returns state with a nullable outline', async () => {
@@ -221,8 +250,8 @@ describe('Projects REST API', () => {
       .expect(200);
 
     expect(response.body).toEqual([
-      expect.objectContaining({ projectId: newer.projectId }),
-      expect.objectContaining({ projectId: state.projectId }),
+      expect.objectContaining({ projectId: newer.projectId, title: 'Ocean' }),
+      expect.objectContaining({ projectId: state.projectId, title: state.topic }),
     ]);
     const summaries: unknown = response.body;
 

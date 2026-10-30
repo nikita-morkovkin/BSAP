@@ -4,16 +4,12 @@ import { StateManagerService } from '../state/state-manager.service';
 import { FfmpegService } from '../audio/ffmpeg.service';
 import { videoProbeSchema } from './schemas';
 import { quantize, videoHash } from './utils';
-import { GreetingCompositorService } from './greeting-compositor.service';
-import { VideoInputsService } from './video-inputs.service';
 
 @Injectable()
 export class VideoFullService {
   constructor(
     private readonly state: StateManagerService,
     private readonly ffmpeg: FfmpegService,
-    private readonly compositor: GreetingCompositorService,
-    private readonly inputs: VideoInputsService,
   ) {}
 
   public async build(
@@ -21,7 +17,6 @@ export class VideoFullService {
     requested: number | undefined,
     signal: AbortSignal,
     onProgress: (value: number) => void,
-    includeGreeting = false,
   ): Promise<string> {
     const state = await this.state.getState(projectId);
     const cycle = state.video?.cycle;
@@ -47,41 +42,28 @@ export class VideoFullService {
     }
 
     const target = quantize(duration, cycle.fps);
-    const greeting = includeGreeting
-      ? await this.inputs.greeting(projectId)
-      : undefined;
-    const path = `video/full/${videoHash({ cycle: cycle.planHash, target, greeting })}.mp4`;
+    const path = `video/full/${videoHash({ cycle: cycle.planHash, target })}.mp4`;
     const destination = this.state.getArtifactPath(projectId, path);
 
     if (!existsSync(destination)) {
-      if (includeGreeting) {
-        await this.compositor.assemble(
-          projectId,
-          destination,
-          target,
-          signal,
-          onProgress,
-        );
-      } else {
-        await this.ffmpeg.renderMedia(
-          destination,
-          [
-            ...(cycle.loop ? ['-stream_loop', '-1'] : []),
-            '-i',
-            this.state.getArtifactPath(projectId, cycle.path),
-            '-t',
-            String(target),
-            '-map',
-            '0:v:0',
-            '-an',
-            '-c:v',
-            'copy',
-            '-movflags',
-            '+faststart',
-          ],
-          { signal, duration: target, onProgress },
-        );
-      }
+      await this.ffmpeg.renderMedia(
+        destination,
+        [
+          ...(cycle.loop ? ['-stream_loop', '-1'] : []),
+          '-i',
+          this.state.getArtifactPath(projectId, cycle.path),
+          '-t',
+          String(target),
+          '-map',
+          '0:v:0',
+          '-an',
+          '-c:v',
+          'copy',
+          '-movflags',
+          '+faststart',
+        ],
+        { signal, duration: target, onProgress },
+      );
 
       const probe = videoProbeSchema.parse(
         await this.ffmpeg.probeMedia(destination),
@@ -109,7 +91,6 @@ export class VideoFullService {
       current.video.full = {
         path,
         cycleHash: cycle.planHash,
-        greetingHash: greeting,
         durationSec: target,
       };
     });

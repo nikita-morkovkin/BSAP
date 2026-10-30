@@ -5,5 +5,4 @@ export { videoProbeSchema } from './video-probe.schema';
 export { effectSchema } from './effect.schema';
 export { effectRulesSchema } from './effect-rules.schema';
 export { exportKindSchema } from './export-kind.schema';
-export { greetingSchema } from './greeting.schema';
 export { effectPresetSchema } from './effect-preset.schema';

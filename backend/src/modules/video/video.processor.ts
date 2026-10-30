@@ -15,11 +15,8 @@ import { VideoChunkRendererService } from './video-chunk-renderer.service';
 import { VideoFinalMuxService } from './video-final-mux.service';
 import { VideoJobService } from './video-job.service';
 import { VideoFullService } from './video-full.service';
-import { GreetingAudioService } from './greeting-audio.service';
-import { GreetingPreviewService } from './greeting-preview.service';
 import { VideoInputsService } from './video-inputs.service';
 import { EffectGeneratorService } from './effect-generator.service';
-import { ExternalLipSyncService } from './external-lip-sync.service';
 
 @Processor('video', { concurrency: 1 })
 export class VideoProcessor extends WorkerHost {
@@ -33,11 +30,8 @@ export class VideoProcessor extends WorkerHost {
     private readonly ffmpeg: FfmpegService,
     private readonly jobs: VideoJobService,
     private readonly full: VideoFullService,
-    private readonly greetingAudio: GreetingAudioService,
-    private readonly greetingPreview: GreetingPreviewService,
     private readonly inputs: VideoInputsService,
     private readonly effects: EffectGeneratorService,
-    private readonly external: ExternalLipSyncService,
   ) {
     super();
   }
@@ -88,27 +82,6 @@ export class VideoProcessor extends WorkerHost {
           task.durationSec,
           signal,
           (value) => report('muxing', value),
-          task.includeGreeting,
-        );
-
-        await updates;
-        await this.jobs.update(projectId, jobId, {
-          stage: 'done',
-          progress: 1,
-          stageProgress: 1,
-          outputPath,
-        });
-
-        return;
-      }
-
-      if (kind === 'greeting_lipsync') {
-        report('rendering_chunks', 0);
-
-        const outputPath = await this.external.build(
-          projectId,
-          task.confirm === true,
-          signal,
         );
 
         await updates;
@@ -130,29 +103,6 @@ export class VideoProcessor extends WorkerHost {
           task.preset,
           signal,
         );
-
-        await updates;
-        await this.jobs.update(projectId, jobId, {
-          stage: 'done',
-          progress: 1,
-          stageProgress: 1,
-          outputPath,
-        });
-
-        return;
-      }
-
-      if (kind === 'greeting_audio' || kind === 'greeting_preview') {
-        report('muxing', 0);
-
-        const outputPath =
-          kind === 'greeting_preview'
-            ? await this.greetingPreview.build(projectId, signal)
-            : undefined;
-
-        if (kind === 'greeting_audio') {
-          await this.greetingAudio.regenerate(projectId, signal);
-        }
 
         await updates;
         await this.jobs.update(projectId, jobId, {

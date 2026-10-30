@@ -46,6 +46,7 @@ export type Chapter = {
 export type ProjectSummary = {
   projectId: string;
   topic: string;
+  title?: string;
   createdAt: string;
   updatedAt: string;
   status: PipelineStatus;
@@ -76,7 +77,7 @@ export type ProjectDetail = {
   outline: { topic: string; totalChapters: number; chapters: OutlineChapter[] } | null;
 };
 
-export type CreateProjectPayload = { topic: string; profile: Profile; selectedTrackIds?: string[] };
+export type CreateProjectPayload = { title: string; description: string; profile: Profile; selectedTrackIds?: string[] };
 export type RegenerateChunkPayload = Partial<Pick<Chunk, 'text' | 'ttsVoice' | 'ttsSpeed' | 'pauseAfterMs'>>;
 export type RegenerateChunkVariables = {
   chapterNumber: number;

@@ -4,5 +4,4 @@ export type ExportKind =
   | 'mixed_audio'
   | 'video_loop'
   | 'video_full'
-  | 'final_mp4'
-  | 'greeting_clip';
+  | 'final_mp4';

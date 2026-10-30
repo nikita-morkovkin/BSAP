@@ -13,9 +13,7 @@ export class MetadataExporterService {
     );
     const timestamps: string[] = [];
     const markers = ['#,Timecode In,Timecode Out,Name,Comment,Color'];
-    let elapsedMs = state.video?.greeting?.enabled
-      ? Math.round((state.video.greetingAudio?.endSec ?? 0) * 1000)
-      : 0;
+    let elapsedMs = 0;
 
     if (
       chapters.length === 0 ||

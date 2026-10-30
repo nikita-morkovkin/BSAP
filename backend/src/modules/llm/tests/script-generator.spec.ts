@@ -70,7 +70,7 @@ describe('Two-chapter script production and disk recovery', () => {
     queue = module.get(ScriptQueueService);
 
     const state = await stateManager.initProject(
-      'Quiet Stars',
+      'A detailed description of quiet stars.',
       profileSchema.parse({
         architectModel: 'architect',
         writerModel: 'writer',
@@ -83,6 +83,7 @@ describe('Two-chapter script production and disk recovery', () => {
         ttsSpeed: 0.85,
         masteringConfig: {},
       }),
+      'Quiet Stars',
     );
 
     projectId = state.projectId;
@@ -157,6 +158,9 @@ describe('Two-chapter script production and disk recovery', () => {
     );
     expect(writerRequest.prompt).not.toContain('word-49 ');
     expect(architectRequest.system).toContain('strict JSON');
+    expect(architectRequest.prompt).toBe(
+      'Design the documentary outline for this topic:\nA detailed description of quiet stars.',
+    );
 
     for (const path of [
       'outline.json',

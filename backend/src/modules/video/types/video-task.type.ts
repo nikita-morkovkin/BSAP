@@ -9,13 +9,8 @@ export type VideoTask = {
     | 'preview'
     | 'mux'
     | 'video_full'
-    | 'greeting_audio'
-    | 'greeting_preview'
-    | 'effect_preset'
-    | 'greeting_lipsync';
-  confirm?: boolean;
+    | 'effect_preset';
   durationSec?: number;
-  includeGreeting?: boolean;
   preset?: EffectPreset;
   style: VideoStyleConfig;
 };

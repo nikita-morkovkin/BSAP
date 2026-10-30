@@ -21,11 +21,12 @@ const ProjectListItem = ({ project }: ProjectListItemProps) => {
   const className = isSelected
     ? "w-full space-y-2 rounded-xl border bg-accent p-3 text-left"
     : "w-full space-y-2 rounded-xl border border-transparent p-3 text-left hover:bg-muted";
+  const projectTitle = project.title ?? project.topic;
 
   const handleClick = () => {
     if (
       window.confirm(
-        `Permanently delete “${project.topic}” and all its files? This cannot be undone.`,
+        `Permanently delete “${projectTitle}” and all its files? This cannot be undone.`,
       )
     ) {
       deletion.mutate(project.projectId);
@@ -41,7 +42,7 @@ const ProjectListItem = ({ project }: ProjectListItemProps) => {
         onClick={handleSelect}
       >
         <span className="block text-sm font-medium wrap-anywhere">
-          {project.topic}
+          {projectTitle}
         </span>
         <Badge variant="outline">{project.status.replaceAll("_", " ")}</Badge>
       </button>
@@ -50,7 +51,7 @@ const ProjectListItem = ({ project }: ProjectListItemProps) => {
         variant="ghost"
         size="icon"
         disabled={deletion.isPending}
-        aria-label={`Delete ${project.topic}`}
+        aria-label={`Delete ${projectTitle}`}
         title="Delete episode"
         onClick={handleClick}
       >

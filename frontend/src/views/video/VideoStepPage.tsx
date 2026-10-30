@@ -2,7 +2,6 @@ import BuildPanel from "./BuildPanel";
 import { videoText } from "./consts/video-text.const";
 import EffectsPanel from "./EffectsPanel";
 import FramePreview from "./FramePreview";
-import GreetingPanel from "./GreetingPanel";
 import { useVideoJob } from "./hooks/useVideoJob.hook";
 import { useVideoSettings } from "./hooks/useVideoSettings.hook";
 import StockLibrary from "./StockLibrary";
@@ -25,7 +24,6 @@ const VideoStepPage = ({ projectId }: VideoStepPageProps) => {
       </summary>
       <StockLibrary projectId={projectId} busy={busy} />
       <EffectsPanel projectId={projectId} busy={busy} />
-      <GreetingPanel projectId={projectId} busy={busy} />
       {settings.error && (
         <p role="alert" className="text-destructive">
           {settings.error}

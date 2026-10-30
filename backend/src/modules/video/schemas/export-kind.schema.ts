@@ -7,5 +7,4 @@ export const exportKindSchema = z.enum([
   'video_loop',
   'video_full',
   'final_mp4',
-  'greeting_clip',
 ]);

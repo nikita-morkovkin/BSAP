@@ -39,12 +39,7 @@ export class ExportService {
       video_loop: state.video?.cycle?.path,
       video_full: state.video?.full?.path,
       final_mp4: state.video?.output,
-      greeting_clip: state.video?.greetingClip,
     };
-
-    const greetingHash = state.video?.greeting?.enabled
-      ? await this.inputs.greeting(projectId)
-      : undefined;
 
     const finalAudio = state.outputFiles.flac ?? state.outputFiles.wav;
 
@@ -84,14 +79,9 @@ export class ExportService {
         (['video_loop', 'video_full', 'final_mp4'].includes(kind) &&
           cycleStale) ||
         (kind === 'video_full' &&
-          (state.video?.full?.cycleHash !== state.video?.cycle?.planHash ||
-            (state.video?.full?.greetingHash !== undefined &&
-              state.video.full.greetingHash !== greetingHash))) ||
-        (kind === 'greeting_clip' &&
-          state.video?.greetingClipInputHash !== greetingHash) ||
+          state.video?.full?.cycleHash !== state.video?.cycle?.planHash) ||
         (kind === 'final_mp4' &&
           (audioStale ||
-            state.video?.outputGreetingHash !== greetingHash ||
             state.video?.outputHash !== audioRevision ||
             state.video?.outputCycleHash !== state.video?.cycle?.planHash)),
       );
@@ -118,9 +108,6 @@ export class ExportService {
         stale: Boolean(
           stale ||
           (audio && audioStale) ||
-          (kind === 'video_full' &&
-            state.video?.full?.greetingHash &&
-            state.video.full.greetingHash !== greetingHash) ||
           (kind === 'final_mp4' &&
             state.video?.outputHash &&
             state.video.outputHash !== audioRevision),

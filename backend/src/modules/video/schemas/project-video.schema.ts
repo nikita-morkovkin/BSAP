@@ -4,30 +4,10 @@ import { videoStyleSchema } from './video-style.schema';
 import { videoJobSchema } from './video-job.schema';
 import { effectSchema } from './effect.schema';
 import { effectRulesSchema } from './effect-rules.schema';
-import { greetingSchema } from './greeting.schema';
 
 export const projectVideoSchema = z.strictObject({
   style: videoStyleSchema,
   job: videoJobSchema.optional(),
-  greeting: greetingSchema.optional(),
-  greetingAudio: z
-    .strictObject({
-      path: artifactPathSchema,
-      hash: z.string(),
-      startSec: z.number().nonnegative(),
-      endSec: z.number().positive(),
-    })
-    .optional(),
-  greetingClip: artifactPathSchema.optional(),
-  greetingClipInputHash: z.string().optional(),
-  externalGreeting: z
-    .strictObject({
-      path: artifactPathSchema,
-      audioHash: z.string(),
-      clipHash: z.string(),
-    })
-    .optional(),
-  greetingPreview: artifactPathSchema.optional(),
   effects: z.array(effectSchema).optional(),
   effectRules: effectRulesSchema.optional(),
   effectAssignments: z
@@ -46,12 +26,10 @@ export const projectVideoSchema = z.strictObject({
   output: artifactPathSchema.optional(),
   outputHash: z.string().optional(),
   outputCycleHash: z.string().optional(),
-  outputGreetingHash: z.string().optional(),
   full: z
     .strictObject({
       path: artifactPathSchema,
       cycleHash: z.string(),
-      greetingHash: z.string().optional(),
       durationSec: z.number().positive(),
     })
     .optional(),
